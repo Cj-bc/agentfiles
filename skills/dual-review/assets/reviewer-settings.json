@@ -1,0 +1,36 @@
+{
+  "$comment": "dual-review の claude レビュワー用の設定。--settings <このファイル> で渡す。狙いは2つ: (1) レビューに必要なツールを事前許可して許可ダイアログで blocked にならないようにする、(2) リポジトリを書き換える経路を deny で塞ぐ。deny は allow より優先される。--permission-mode bypassPermissions は対話起動時に確認ダイアログを出して起動直後に blocked になるため使わない（2026-08-24 に実測）。",
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "Write",
+      "TodoWrite",
+      "Bash"
+    ],
+    "deny": [
+      "Edit",
+      "NotebookEdit",
+      "Bash(git commit:*)",
+      "Bash(git add:*)",
+      "Bash(git push:*)",
+      "Bash(git reset:*)",
+      "Bash(git checkout:*)",
+      "Bash(git switch:*)",
+      "Bash(git restore:*)",
+      "Bash(git stash:*)",
+      "Bash(git clean:*)",
+      "Bash(git rebase:*)",
+      "Bash(git merge:*)",
+      "Bash(git cherry-pick:*)",
+      "Bash(git rm:*)",
+      "Bash(git mv:*)",
+      "Bash(git apply:*)",
+      "Bash(git branch:*)",
+      "Bash(git tag:*)",
+      "Bash(git worktree:*)"
+    ]
+  },
+  "hooks": {}
+}
