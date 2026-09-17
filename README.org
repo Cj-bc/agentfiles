@@ -1,0 +1,13 @@
+* Agentfiles -- configs, skills, memories for all agents I use
+
+This is personal central repository to store all skills and memories I use with coding agents.
+It isn't crafted for generic use. 
+
+** Who is this repository for?
+Me.
+This repository isn't intended to provide something useful to others.
+There might be something you can reuse, but remember that it isn't main focus of this repository (at least for now)
+
+** Status
+
+Gathering skills and memories claude code and codex wrote previously. It isn't organized yet.
