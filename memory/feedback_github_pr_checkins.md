@@ -1,6 +1,6 @@
 ---
 name: Never schedule self check-ins for GitHub issues or PRs
-description: On GitHub issues and PRs, reviews / comments / CI results arrive as events on their own. Don't create a scheduled wake-up to poll them — it burns usage for nothing.
+description: This is for claude. On GitHub issues and PRs, reviews / comments / CI results arrive as events on their own. Don't create a scheduled wake-up to poll them — it burns usage for nothing.
 type: feedback
 ---
 
