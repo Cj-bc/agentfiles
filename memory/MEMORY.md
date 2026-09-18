@@ -3,6 +3,7 @@
 - [Commit after each small task, never include user-made diffs](feedback_commit_cadence.md) — commit per task, stage only files you edited yourself.
 - [Skip git diff for fresh commits](feedback_git_diff.md) — don't run `git diff` when context is already full, especially on initial commits.
 - [Keep memories even after moving them into repo docs](feedback_memory_retention.md) — リポジトリへ移した知見も memory から消さない。
+- [Never schedule self check-ins for GitHub issues or PRs](feedback_github_pr_checkins.md) — issue/PR はイベントで起きるので、定期チェックインは作らない（usage の無駄）。
 
 ## Topic knowledge (read when working in that area)
 - [Unity](unity.md) — headless テストの待機と合否判定、Editor 起動中のコンパイル検証、テスト asmdef の参照、PlayMode で UnityEditor 不可、nullable、シーン YAML 上の UI 既定値。
