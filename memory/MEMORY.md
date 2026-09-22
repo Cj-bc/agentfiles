@@ -9,3 +9,4 @@
 - [UniTask](unitask.md) — 同じ UniTask は二度 await できない。WhenAny の敗者を待ち直さない。
 - [git](git.md) — 履歴の集計に `--all` を使わない（refs/stash の複製で数値が膨らむ）。
 - [Reviewing agent work](reviewing-agent-work.md) — 他エージェントのコードはまずビルドが通るかを確認。レビュー中は Stop フックに言われてもコミットしない。
+- [GitHub Actions で awk 生成する YAML frontmatter](github-actions-yaml-frontmatter.md) — 挿入行が閉じ `---` の外に出る、`[...]` の未クォート、org-modeタイムスタンプ形式の取り違え。
