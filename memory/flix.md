@@ -4,20 +4,6 @@ description: Flix (paranoid-time.flix) の罠 — test262 移植ツリーは関�
 type: reference
 ---
 
-## test262 移植ツリーのパス・JSソース引用は関数リネームで変えない
-`paranoid-time.flix` の `test/test262/built-ins/...` は [tc39/test262](https://github.com/tc39/test262) の
-該当パスをそのまま反映したツリー（`test/test262/README.md` 参照。トレーサビリティのための設計）。
-ライブラリ側の関数（例: `fromEpochMilliseconds` → `saturatingOfEpochMilli`）をリネームしても、
-このディレクトリ・ファイル名や `mod Test262.BuiltIns....` は変えない。
-
-さらに doc comment 内の `` /// test262: `fromEpochMilliseconds(...).epochNanoseconds` is ... `` という形の行は、
-リネーム対象の自分たちの関数ではなく元の JS (test262) ソースをそのまま引用したもの。ここも書き換えない。
-
-単純な `\bold\b` → `new` の一括置換をかけると、上記のパス文字列や JS 引用まで巻き込んで誤って書き換えてしまう
-（実際に `.../fromEpochMilliseconds/limits.flix` というパス文字列が `.../saturatingOfEpochMilli/limits.flix` に
-化けた）。置換後は `grep` で `Temporal/Instant/` 配下のパスと `` test262: ` `` で始まる行を除外して差分を
-目視確認すること。
-
 ## 関数名の一括置換は連番付き識別子とPascalCase参照を取りこぼす
 `\btryAdd\b` は `tryAdd01`（数字が続く＝word boundary が無い）にはマッチしない。
 テスト関数名 (`def tryAdd01_...`)、モジュール宣言 (`mod TestTime.Instant.TryAdd`)、
