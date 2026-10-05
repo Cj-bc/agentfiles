@@ -3,6 +3,7 @@
 - [Commit after each small task, never include user-made diffs](feedback_commit_cadence.md) — commit per task, stage only files you edited yourself.
 - [Skip git diff for fresh commits](feedback_git_diff.md) — don't run `git diff` when context is already full, especially on initial commits.
 - [Keep memories even after moving them into repo docs](feedback_memory_retention.md) — リポジトリへ移した知見も memory から消さない。
+- [Read agentfiles before starting work](feedback_read_agentfiles_first.md) — agentfiles がセッションにあれば、作業前に索引と関係トピックを読む。
 
 ## Topic knowledge (read when working in that area)
 - [Refactoring](refactoring.md) — 正規表現の一括置換は連番・PascalCase埋め込み参照を取りこぼす、リネームはスコープを超えない。
@@ -12,3 +13,5 @@
 - [UniTask](unitask.md) — 同じ UniTask は二度 await できない。WhenAny の敗者を待ち直さない。
 - [git](git.md) — 履歴の集計に `--all` を使わない（refs/stash の複製で数値が膨らむ）。
 - [Reviewing agent work](reviewing-agent-work.md) — 他エージェントのコードはまずビルドが通るかを確認。レビュー中は Stop フックに言われてもコミットしない。
+- [Compose Multiplatform](compose-multiplatform.md) — リソースで多言語化する。Wasm では stringResource が最初は空文字。Wasm にはシステムフォントが無く日本語が豆腐になる。保存値に表示文字列を使わない。
+- [Cloud session](cloud-session.md) — Google Maven と codeload.github.com が塞がれている。Kotlin/Wasm を webpack なしで Playwright に出す手順。PR の base はデフォルトブランチを確認する。
