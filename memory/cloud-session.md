@@ -1,0 +1,39 @@
+---
+name: cloud-session
+description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven と codeload.github.com が塞がれている、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base はデフォルトブランチを確認する
+type: reference
+---
+
+## 塞がれているホスト（2026-10 時点）
+- `dl.google.com`（Google Maven）が 403。Android Gradle Plugin（`com.android.*`）を解決できず、Android を含むプロジェクトは
+  設定フェーズで失敗する。`repo.maven.apache.org` と `registry.npmjs.org` は通る。
+- `codeload.github.com` が 403。Kotlin/Wasm の `kotlinWasmToolingSetup`（Kotlin 同梱の yarn.lock が GitHub の tarball を参照する）が失敗するので、
+  `wasmJsBrowser*Distribution` / `*Run` のような webpack を使うタスクは動かない。
+- Node 製ツール（yarn / npm）は `NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` を付けないと TLS エラーになる。
+- 環境の Gradle は 8.14 と古いことがある。ラッパーが新しい版を要求していても、Android を除けばそのまま動いた。
+
+## Android を含む KMP プロジェクトで Wasm だけを検証する
+リポジトリを scratchpad にコピーし（`git ls-files -z | xargs -0 -I{} cp --parents {} DEST/`）、
+コピー側で Android のプラグイン・`android {}` ブロック・`androidMain` を削ってから `compileKotlinWasmJs` を実行する。
+本物のリポジトリは触らない。編集したソースはコピーへ同期し直してビルドする。Android 側は未検証だと PR に明記する。
+
+## Kotlin/Wasm を webpack なしで Chromium に出す
+1. `:composeApp:compileDevelopmentExecutableKotlinWasmJs :composeApp:wasmJsProcessResources`
+2. 1 か所に集める:
+   - `build/compileSync/wasmJs/main/developmentExecutable/kotlin/*`（`<module>.mjs` と `.wasm`）
+   - `build/compose/skiko-runtime-processed-wasmjs/skiko.*`
+   - `build/processedResources/wasmJs/main/composeResources`
+3. `.mjs` が bare import する npm パッケージ（例: `@js-joda/core`）は `npm i` し、`<script type="importmap">` で ESM ファイルに向ける。
+   `index.html` には `<div id="composeApp">` と `<script type="module">import './<module>.mjs'</script>` を置く。
+4. `.wasm` → `application/wasm`、`.mjs` → `text/javascript` を返すように設定した `python3 http.server` で配信する。
+5. Playwright は `/opt/node-tools/node_modules` にある（Python 版は無い）。
+   `createRequire('/opt/node-tools/node_modules/')` で読み込み、`newContext({ locale: 'ja-JP' })` でロケールを切り替えて撮影する。
+   `addInitScript` で `localStorage` に旧形式のデータを入れておけば、データ移行も確認できる。
+   Compose の canvas はクリックで操作する（下部タブなら座標を指定してクリック）。
+
+## シェルの罠: `&&` の連鎖の途中にある `cd`
+`cp ... && cd DIR && cat > index.html` の `cp` が失敗すると、`cd` が飛ばされて、ファイルが元の作業ディレクトリ（ホームなど）に書かれる。
+`cd DIR || exit 1` を単独で書くか、書き込み先は絶対パスで指定する。
+
+## PR の base はデフォルトブランチを確認してから指定する
+`main` と決めつけると `PullRequest.base (invalid)` で失敗する。`git remote show origin | grep HEAD` で確認する（`master` のリポジトリがある）。
