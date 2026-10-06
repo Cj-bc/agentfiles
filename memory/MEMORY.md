@@ -14,4 +14,4 @@
 - [git](git.md) — 履歴の集計に `--all` を使わない（refs/stash の複製で数値が膨らむ）。
 - [Reviewing agent work](reviewing-agent-work.md) — 他エージェントのコードはまずビルドが通るかを確認。レビュー中は Stop フックに言われてもコミットしない。
 - [Compose Multiplatform](compose-multiplatform.md) — リソースで多言語化する。Wasm では stringResource が最初は空文字。Wasm にはシステムフォントが無く日本語が豆腐になる。保存値に表示文字列を使わない。
-- [Cloud session](cloud-session.md) — Google Maven と codeload.github.com が塞がれている。Kotlin/Wasm を webpack なしで Playwright に出す手順。PR の base はデフォルトブランチを確認する。
+- [Cloud session](cloud-session.md) — Google Maven と codeload.github.com が塞がれている。Kotlin/Wasm を webpack なしで Playwright に出す手順。PR の base はデフォルトブランチではなく、作業ブランチの元のブランチにする。

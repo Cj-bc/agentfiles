@@ -1,6 +1,6 @@
 ---
 name: cloud-session
-description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven と codeload.github.com が塞がれている、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base はデフォルトブランチを確認する
+description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven と codeload.github.com が塞がれている、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする
 type: reference
 ---
 
@@ -35,5 +35,10 @@ type: reference
 `cp ... && cd DIR && cat > index.html` の `cp` が失敗すると、`cd` が飛ばされて、ファイルが元の作業ディレクトリ（ホームなど）に書かれる。
 `cd DIR || exit 1` を単独で書くか、書き込み先は絶対パスで指定する。
 
-## PR の base はデフォルトブランチを確認してから指定する
-`main` と決めつけると `PullRequest.base (invalid)` で失敗する。`git remote show origin | grep HEAD` で確認する（`master` のリポジトリがある）。
+## PR の base は「作業ブランチがどこから切られたか」で決める
+デフォルトブランチ（`main` / `master`）とは限らない。2026-10-06、`master` に向けて PR を作ったところ、
+ユーザーから「base には `rewrite-in-kotlin` を指定してあったはず」と指摘された。チェックアウト直後の HEAD は
+`Merge pull request #5 ...` で、そのブランチの直前の PR がどこにマージされたかを見れば分かった。
+- `git branch -r --contains HEAD` や、HEAD のマージコミットの PR の base を確認してから base を指定する。
+- `main` と決めつけると `PullRequest.base (invalid)` で失敗するが、`master` で通ってしまう場合のほうが気づきにくい。
+- base を間違えたら `update_pull_request` で base を変更できる。
