@@ -1,12 +1,12 @@
 ---
 name: cloud-session
-description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven と codeload.github.com が塞がれている、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする
+description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven と codeload.github.com が塞がれている、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする、Maven Central の 429 は待って再試行、Playwright で Compose の canvas に日本語を入力できない
 type: reference
 ---
 
 ## 塞がれているホスト（2026-10 時点）
 - `dl.google.com`（Google Maven）が 403。Android Gradle Plugin（`com.android.*`）を解決できず、Android を含むプロジェクトは
-  設定フェーズで失敗する。`repo.maven.apache.org` と `registry.npmjs.org` は通る。
+  設定フェーズで失敗する。`repo.maven.apache.org` と `registry.npmjs.org` は通る（ただし Maven Central は 429 を返すことがある。下記）。
 - `codeload.github.com` が 403。Kotlin/Wasm の `kotlinWasmToolingSetup`（Kotlin 同梱の yarn.lock が GitHub の tarball を参照する）が失敗するので、
   `wasmJsBrowser*Distribution` / `*Run` のような webpack を使うタスクは動かない。
 - Node 製ツール（yarn / npm）は `NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` を付けないと TLS エラーになる。
@@ -30,6 +30,9 @@ type: reference
    `createRequire('/opt/node-tools/node_modules/')` で読み込み、`newContext({ locale: 'ja-JP' })` でロケールを切り替えて撮影する。
    `addInitScript` で `localStorage` に旧形式のデータを入れておけば、データ移行も確認できる。
    Compose の canvas はクリックで操作する（下部タブなら座標を指定してクリック）。
+   - テキストフィールドの位置は、上にある一覧の行数などで変わる。操作のたびにスクリーンショットを撮って座標を確かめる。
+     ずれた座標をクリックしても何も起きないので、「操作が反映されない」バグと見分けがつかない。
+   - `keyboard.type` で日本語を入力しても、テキストフィールドに入らなかった（原因は未検証）。入力の確認には ASCII を使う。
 
 ## シェルの罠: `&&` の連鎖の途中にある `cd`
 `cp ... && cd DIR && cat > index.html` の `cp` が失敗すると、`cd` が飛ばされて、ファイルが元の作業ディレクトリ（ホームなど）に書かれる。
@@ -42,3 +45,8 @@ type: reference
 - `git branch -r --contains HEAD` や、HEAD のマージコミットの PR の base を確認してから base を指定する。
 - `main` と決めつけると `PullRequest.base (invalid)` で失敗するが、`master` で通ってしまう場合のほうが気づきにくい。
 - base を間違えたら `update_pull_request` で base を変更できる。
+
+## Maven Central の 429
+`repo.maven.apache.org` が `429 Too Many Requests` を返して Gradle が失敗することがある（2026-10-07）。待って再実行すれば通る。
+`for i in 1 2 3 4 5; do gradle … > log 2>&1 && break; grep -q 429 log || break; sleep $((i*45)); done`
+依存が一度揃えば `--offline` を付けると問い合わせ自体が発生しない。
