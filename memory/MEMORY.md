@@ -13,5 +13,5 @@
 - [UniTask](unitask.md) — 同じ UniTask は二度 await できない。WhenAny の敗者を待ち直さない。
 - [git](git.md) — 履歴の集計に `--all` を使わない（refs/stash の複製で数値が膨らむ）。
 - [Reviewing agent work](reviewing-agent-work.md) — 他エージェントのコードはまずビルドが通るかを確認。レビュー中は Stop フックに言われてもコミットしない。
-- [Compose Multiplatform](compose-multiplatform.md) — リソースで多言語化する。Wasm では stringResource が最初は空文字。Wasm にはシステムフォントが無く日本語が豆腐になる。保存値に表示文字列を使わない。
-- [Cloud session](cloud-session.md) — Google Maven と codeload.github.com が塞がれている。Kotlin/Wasm を webpack なしで Playwright に出す手順。PR の base はデフォルトブランチではなく、作業ブランチの元のブランチにする。
+- [Compose Multiplatform](compose-multiplatform.md) — リソースで多言語化する。Wasm では stringResource が最初は空文字。Wasm にはシステムフォントが無く日本語が豆腐になる。保存値に表示文字列を使わない。同じ可変オブジェクトを渡した子は strong skipping でスキップされる（共有データは mutableStateOf / mutableStateListOf で持つ）。
+- [Cloud session](cloud-session.md) — Google Maven と codeload.github.com が塞がれている。Kotlin/Wasm を webpack なしで Playwright に出す手順（keyboard.type では canvas に日本語が入らない）。Maven Central の 429 は待って再試行。PR の base はデフォルトブランチではなく、作業ブランチの元のブランチにする。
