@@ -22,15 +22,15 @@ type: reference
 
 ## Compose と同じモジュールのテストは Wasm の Node で動かない（2026-10）
 `wasmJs { nodejs() }` + `commonTest` に `kotlin("test")` で `wasmJsNodeTest` を作っても、同じモジュールに Compose がある限り、
-Skiko の wasm を Node で読み込めずにテストが走らない。ロジックを Compose / Skiko 抜きのモジュールに分けると解決する。
+Skiko の wasm を Node で読み込めずにテストが走らない。ロジックを Compose / Skiko 抜きのモジュールに分ければ解決するはずだが、分割はまだ試していない（未検証）。
 分離のとき `Category` のように `StringResource`（Compose Resources）を持つ型が足を引っ張る。ID とリストをコアに残し、ラベルと色は UI 側へ。
 `currentDate()` のような `expect` 関数も、コア側に seam が必要。
 
-## 塞がれた環境で Wasm のテストだけ実行する
+## 塞がれた環境で Wasm のテストだけ実行する（2026-10）
 [cloud-session.md](cloud-session.md) の手順で Android を外したコピーを作り、`:composeApp:compileTestDevelopmentExecutableKotlinWasmJs -x kotlinWasmToolingSetup` を実行する。
 `build/compileSync/wasmJs/test/testDevelopmentExecutable/kotlin/` に `<module>-test.mjs` ができる。そのまま Node で動かすには:
 1. `build/compose/skiko-runtime-processed-wasmjs/skiko.*` を同じディレクトリへコピーし、`skiko.mjs` を `export default {};` に差し替える。
 2. `<module>-test.import-object.mjs` の `'./skiko.mjs': <ns>` を `new Proxy({}, {get: () => () => {}})` に書き換える（wasm の import がすべて callable である必要がある）。
-3. `npm i --no-save @js-joda/core`（`NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` を付ける）。
+3. `npm i --no-save @js-joda/core`（例。`.mjs` が bare import するパッケージを入れる）（`NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` を付ける）。
 4. 小さなランナーを書く: `globalThis.kotlinTest = {}`、`describe` / `it` を配列に集める関数を `globalThis` に定義 → `import` した `startUnitTests()` を呼ぶ → 集めたテストを順に実行して PASS / FAIL を出す。
 Maven が `429 Too Many Requests` を返すことがあるので、30 秒空けて 2〜3 回リトライする（失敗するのは取得だけで、再実行で通る）。
