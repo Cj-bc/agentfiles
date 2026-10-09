@@ -16,3 +16,4 @@
 - [Reviewing agent work](reviewing-agent-work.md) — 他エージェントのコードはまずビルドが通るかを確認。レビュー中は Stop フックに言われてもコミットしない。
 - [Compose Multiplatform](compose-multiplatform.md) — リソースで多言語化する。Wasm では stringResource が最初は空文字。Wasm にはシステムフォントが無く日本語が豆腐になる。保存値に表示文字列を使わない。
 - [Cloud session](cloud-session.md) — Google Maven と codeload.github.com が塞がれている。Kotlin/Wasm を webpack なしで Playwright に出す手順。PR の base はデフォルトブランチではなく、作業ブランチの元のブランチにする。
+- [Kotlin Multiplatform testing](kotlin-multiplatform-testing.md) — ストレージはインターフェースで差し替える。`encodeDefaults` で JSON のキーが消える。Compose と同じモジュールでは wasmJsNodeTest が動かない。塞がれた環境で Wasm のテストを Node で直接動かす手順。

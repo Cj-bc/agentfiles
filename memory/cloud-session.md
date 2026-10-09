@@ -31,9 +31,17 @@ type: reference
    `addInitScript` で `localStorage` に旧形式のデータを入れておけば、データ移行も確認できる。
    Compose の canvas はクリックで操作する（下部タブなら座標を指定してクリック）。
 
+## Wasm のテストを動かす
+`wasmJsNodeTest` も `kotlinWasmToolingSetup` に依存するので動かない。テストのコンパイルと Node での直接実行は [kotlin-multiplatform-testing.md](kotlin-multiplatform-testing.md) を参照。
+`repo.maven.apache.org` は一時的に 429 を返すことがあり、リトライで通る。
+
 ## シェルの罠: `&&` の連鎖の途中にある `cd`
 `cp ... && cd DIR && cat > index.html` の `cp` が失敗すると、`cd` が飛ばされて、ファイルが元の作業ディレクトリ（ホームなど）に書かれる。
 `cd DIR || exit 1` を単独で書くか、書き込み先は絶対パスで指定する。
+
+## PR のレビューコメントへの返信
+PR の購読後にオーナーから届くコメント（「レビューして」「分離を念頭に置くと直す所は？」など）は、PR にコメントで返す。
+追加した修正は、返信前に Android を外したコピーで再度テストを走らせて確認する。
 
 ## PR の base は「作業ブランチがどこから切られたか」で決める
 デフォルトブランチ（`main` / `master`）とは限らない。2026-10-06、`master` に向けて PR を作ったところ、
