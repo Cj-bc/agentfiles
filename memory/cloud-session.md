@@ -1,16 +1,49 @@
 ---
 name: cloud-session
-description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven と codeload.github.com が塞がれている、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする
+description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com が塞がれている、Maven Central の 429 は Google のミラーで回避、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする
 type: reference
 ---
 
 ## 塞がれているホスト（2026-10 時点）
-- `dl.google.com`（Google Maven）が 403。Android Gradle Plugin（`com.android.*`）を解決できず、Android を含むプロジェクトは
-  設定フェーズで失敗する。`repo.maven.apache.org` と `registry.npmjs.org` は通る。
+- `dl.google.com`（Google Maven）が 403 の環境がある。そのときは Android Gradle Plugin（`com.android.*`）を解決できず、
+  Android を含むプロジェクトは設定フェーズで失敗する。環境によっては通る（下の「環境によっては dl.google.com が通る」を参照）。
+- `repo.maven.apache.org` と `registry.npmjs.org` は通る。ただし Maven Central は 429 が続くことがある（下の「ミラー」の節）。
 - `codeload.github.com` が 403。Kotlin/Wasm の `kotlinWasmToolingSetup`（Kotlin 同梱の yarn.lock が GitHub の tarball を参照する）が失敗するので、
   `wasmJsBrowser*Distribution` / `*Run` のような webpack を使うタスクは動かない。
 - Node 製ツール（yarn / npm）は `NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` を付けないと TLS エラーになる。
 - 環境の Gradle は 8.14 と古いことがある。ラッパーが新しい版を要求していても、Android を除けばそのまま動いた。
+
+## 環境によっては dl.google.com が通る（2026-10-14）
+同じリポジトリでも、環境（environment）を変えたら `dl.google.com` が 200 を返すようになった。塞がれていると決めつけず、最初に
+`curl -sS -o /dev/null -w "%{http_code}" https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/maven-metadata.xml` で確かめる。
+通るなら Android SDK は自分で入れられる:
+1. `https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip` を `/opt/android-sdk` に展開し、
+   中身を `cmdline-tools/latest/` へ移す。
+2. `yes | cmdline-tools/latest/bin/sdkmanager --sdk_root=/opt/android-sdk "platforms;android-35" "build-tools;35.0.0" "platform-tools"`
+3. リポジトリに `local.properties`（`sdk.dir=/opt/android-sdk`、通常 .gitignore 済み）を置く。
+- `com.android.kotlin.multiplatform.library` のプロジェクトには `assembleDebug` が無い。`:composeApp:assembleAndroidMain` /
+  `compileAndroidMain` / `testAndroidHostTest` を使う。
+
+## Maven Central の 429 は Google のミラーで回避する
+`repo.maven.apache.org` が `429 Too Many Requests` を返し続け、リトライでも通らないことがある（2026-10-14）。
+`https://maven-central.storage-download.googleapis.com/maven2/` は同じ内容を 200 で返すので、リポジトリを触らずに
+`~/.gradle/init.d/mirror.init.gradle.kts` で先頭に差し込む（プラグインポータルも Maven Central へリダイレクトするので
+`pluginManagement` にも入れる）:
+```kotlin
+val mirror = "https://maven-central.storage-download.googleapis.com/maven2/"
+beforeSettings {
+    pluginManagement.repositories.maven(mirror)
+    dependencyResolutionManagement.repositories.maven(mirror)
+}
+settingsEvaluated {
+    listOf(pluginManagement.repositories, dependencyResolutionManagement.repositories).forEach { repos ->
+        val m = repos.filterIsInstance<org.gradle.api.artifacts.repositories.MavenArtifactRepository>()
+            .firstOrNull { it.url.toString() == mirror }
+        if (m != null) { repos.remove(m); repos.add(0, m) }
+    }
+}
+```
+`FAIL_ON_PROJECT_REPOS` の設定でも、settings 側のリポジトリなので問題ない。
 
 ## Android を含む KMP プロジェクトで Wasm だけを検証する
 リポジトリを scratchpad にコピーし（`git ls-files -z | xargs -0 -I{} cp --parents {} DEST/`）、
@@ -30,10 +63,12 @@ type: reference
    `createRequire('/opt/node-tools/node_modules/')` で読み込み、`newContext({ locale: 'ja-JP' })` でロケールを切り替えて撮影する。
    `addInitScript` で `localStorage` に旧形式のデータを入れておけば、データ移行も確認できる。
    Compose の canvas はクリックで操作する（下部タブなら座標を指定してクリック）。
+   スクロールは `page.mouse.move(x, y)` してから `page.mouse.wheel(0, dy)`。テキスト欄はクリックしてから `page.keyboard.type()` で入力できる。
+   スクリプトの最後で `browser.close()` を忘れると、撮影は済んでもコマンドがタイムアウトする。
 
 ## Wasm のテストを動かす
 `wasmJsNodeTest` も `kotlinWasmToolingSetup` に依存するので動かない。テストのコンパイルと Node での直接実行は [kotlin-multiplatform-testing.md](kotlin-multiplatform-testing.md) を参照。
-`repo.maven.apache.org` は一時的に 429 を返すことがあり、リトライで通る。
+`repo.maven.apache.org` が 429 を返したら、まず少し空けてリトライし、通らなければ上の「Maven Central の 429 は Google のミラーで回避する」の init スクリプトを使う。
 
 ## シェルの罠: `&&` の連鎖の途中にある `cd`
 `cp ... && cd DIR && cat > index.html` の `cp` が失敗すると、`cd` が飛ばされて、ファイルが元の作業ディレクトリ（ホームなど）に書かれる。
