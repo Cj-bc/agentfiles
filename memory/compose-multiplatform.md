@@ -1,6 +1,6 @@
 ---
 name: compose-multiplatform
-description: Compose Multiplatform のリソースによる多言語化と Kotlin/Wasm の罠 — Wasm では stringResource が非同期で最初は空文字、Wasm にはシステムフォントが無い、保存値に表示文字列を使わない
+description: Compose Multiplatform のリソースによる多言語化と Kotlin/Wasm の罠 — Wasm では stringResource が非同期で最初は空文字、Wasm にはシステムフォントが無い、保存値に表示文字列を使わない、SVG のパスからアイコンを作る、トークンは CompositionLocal で配る、kotlinx-datetime の YearMonth と保存形式
 type: reference
 ---
 
@@ -45,3 +45,18 @@ Wasm の Compose は canvas に描画する。HTML 側の `font-family` は効�
 - `LinearProgressIndicator` は値が 0 でも右端に「停止インジケーター」の点を描く。要らなければ `drawStopIndicator = {}`。
 - `FilterChip` を並べて折り返すには `FlowRow`（`@OptIn(ExperimentalLayoutApi::class)`）。`compose.foundation` に入っている。
 - `material-icons-core` は `compose.material3` の推移的依存として解決されていることが多いが、宣言していないので頼らない。
+
+## アイコンライブラリなしで SVG のアイコンを使う
+デザインの SVG（`<path d=...>` の線のアイコン）は、`ImageVector.Builder` に `addPath(pathData = addPathNodes(d), stroke = SolidColor(Color.Black), strokeLineWidth = 1.8f, strokeLineCap = StrokeCap.Round, strokeLineJoin = StrokeJoin.Round)` で
+そのまま描ける（`androidx.compose.ui.graphics.vector.addPathNodes`）。`<circle>` / `<rect rx>` は弧（`a`）のパスに書き直す。
+`Icon(tint = ...)` で色が付く。`material-icons-extended` を足さずに済む（依存を Nix の `deps.json` でロックしているプロジェクトでは、再生成も要らない）。Compose Multiplatform 1.7.3 で確認。
+
+## デザイントークンは CompositionLocal で配る
+`@Immutable data class AppColors(...)` をライト・ダークの 2 組作り、`staticCompositionLocalOf` で配って `object AppTheme { val colors @Composable get() = Local.current }` （例: `LocalAppColors.current`）で読む。
+Material の `colorScheme` も同じ値に揃えておくと、`DatePicker` や `ModalBottomSheet` などの M3 部品の色も合う。デザインにダークのトークンがなければ、役割ごとに明度を反転して自分で作り、PR にそう書く。
+
+## kotlinx-datetime
+- `YearMonth` は 0.7.0 から。0.6.x には `YearMonth` が無い。
+- 既定のシリアライザーは `LocalDate` → `"2026-10-14"`、`YearMonth` → `"2026-10"`（ISO）。独自の型が同じ ISO 文字列で保存していたなら、置き換えても保存形式は変わらない。テストで固定しておく。
+- 入力の検証には `LocalDate.Formats.ISO.parseOrNull(text)`（`"2026-02-30"` や `"2026-1-01"` は null）。
+- 0.7.0 では npm の `format-util` に依存しなくなるので、Wasm の `kotlin-js-store/wasm/yarn.lock` が変わる。`./gradlew kotlinWasmUpgradeYarnLock` で更新する（クラウド環境でも動いた）。

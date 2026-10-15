@@ -1,6 +1,6 @@
 ---
 name: cloud-session
-description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com が塞がれている、Maven Central の 429 は Google のミラーで回避、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする
+description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com が塞がれている、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする
 type: reference
 ---
 
@@ -63,7 +63,7 @@ settingsEvaluated {
    `createRequire('/opt/node-tools/node_modules/')` で読み込み、`newContext({ locale: 'ja-JP' })` でロケールを切り替えて撮影する。
    `addInitScript` で `localStorage` に旧形式のデータを入れておけば、データ移行も確認できる。
    Compose の canvas はクリックで操作する（下部タブなら座標を指定してクリック）。
-   スクロールは `page.mouse.move(x, y)` してから `page.mouse.wheel(0, dy)`。テキスト欄はクリックしてから `page.keyboard.type()` で入力できる。
+   スクロールは `page.mouse.move(x, y)` してから `page.mouse.wheel(0, dy)`。テキスト欄はクリックしてから `page.keyboard.type()` で入力できる（ASCII のみ。下の「canvas を Playwright で操作するときの罠」を参照）。
    スクリプトの最後で `browser.close()` を忘れると、撮影は済んでもコマンドがタイムアウトする。
 
 ## Wasm のテストを動かす
@@ -85,3 +85,17 @@ PR の購読後にオーナーから届くコメント（「レビューして�
 - `git branch -r --contains HEAD` や、HEAD のマージコミットの PR の base を確認してから base を指定する。
 - `main` と決めつけると `PullRequest.base (invalid)` で失敗するが、`master` で通ってしまう場合のほうが気づきにくい。
 - base を間違えたら `update_pull_request` で base を変更できる。
+
+## Compose (Wasm) の canvas を Playwright で操作するときの罠（2026-10-15）
+- `page.keyboard.type()` は ASCII なら Compose のテキスト欄に入るが、日本語は入らなかった（原因は未確認。おそらく IME を経由しないため）。検索や新規作成の確認は ASCII の文字列で行う。
+- `ModalBottomSheet` を開いた直後のクリックは取りこぼされた（おそらく開くアニメーション中のため。ダイアログも同様の可能性）。開いたあと 1 秒ほど待つ（スクリーンショットを挟む）。
+- スワイプは `mouse.move` → `mouse.down` → `mouse.move(x, y, {steps: 12})` → `mouse.up` で再現できる（`SwipeToDismissBox` の削除まで動く）。
+- `colorScheme: 'dark'` を `newContext` に渡すと、`isSystemInDarkTheme()` が true になる。
+
+## PR に画面のスクリーンショットを載せる
+GitHub の MCP では画像を添付できない。スクリーンショットを data URI で埋め込んだ HTML を Artifact として公開し、その URL を PR の説明に書いた
+（Artifact は既定でオーナーだけが見られる、と PR にも書いておく）。
+
+## auto mode では `git checkout -B` が拒否される
+マージ済みの PR のブランチを base の最新に付け替えるとき、`git checkout -B <branch> origin/<base>` は「Git Destructive」として拒否された。
+ブランチが base の祖先なら `git merge --ff-only origin/<base>` で同じ結果になり、通る。
