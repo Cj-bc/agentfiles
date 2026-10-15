@@ -56,7 +56,7 @@ Wasm の Compose は canvas に描画する。HTML 側の `font-family` は効�
 Material の `colorScheme` も同じ値に揃えておくと、`DatePicker` や `ModalBottomSheet` などの M3 部品の色も合う。デザインにダークのトークンがなければ、役割ごとに明度を反転して自分で作り、PR にそう書く。
 
 ## kotlinx-datetime
-- `YearMonth` は 0.7.0 から。0.6.x には `YearMonth` が無い。
+- `YearMonth` は 0.7.0 から。
 - 既定のシリアライザーは `LocalDate` → `"2026-10-14"`、`YearMonth` → `"2026-10"`（ISO）。独自の型が同じ ISO 文字列で保存していたなら、置き換えても保存形式は変わらない。テストで固定しておく。
 - 入力の検証には `LocalDate.Formats.ISO.parseOrNull(text)`（`"2026-02-30"` や `"2026-1-01"` は null）。
 - 0.7.0 では npm の `format-util` に依存しなくなるので、Wasm の `kotlin-js-store/wasm/yarn.lock` が変わる。`./gradlew kotlinWasmUpgradeYarnLock` で更新する（クラウド環境でも動いた）。
