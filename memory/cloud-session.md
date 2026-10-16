@@ -59,6 +59,8 @@ settingsEvaluated {
 3. `.mjs` が bare import する npm パッケージ（例: `@js-joda/core`）は `npm i` し、`<script type="importmap">` で ESM ファイルに向ける。
    `index.html` には `<div id="composeApp">` と `<script type="module">import './<module>.mjs'</script>` を置く。
 4. `.wasm` → `application/wasm`、`.mjs` → `text/javascript` を返すように設定した `python3 http.server` で配信する。
+   `http.server` は起動時のディレクトリを使い続けるので、配信中のディレクトリを `rm -rf` で作り直すと空の応答（`ERR_EMPTY_RESPONSE`）を返す。
+   ビルドし直したら中身だけ消して入れ替えるか、サーバーを起動し直す。
 5. Playwright は `/opt/node-tools/node_modules` にある（Python 版は無い）。
    `createRequire('/opt/node-tools/node_modules/')` で読み込み、`newContext({ locale: 'ja-JP' })` でロケールを切り替えて撮影する。
    `addInitScript` で `localStorage` に旧形式のデータを入れておけば、データ移行も確認できる。
@@ -91,6 +93,10 @@ PR の購読後にオーナーから届くコメント（「レビューして�
 - `ModalBottomSheet` を開いた直後のクリックは取りこぼされた（おそらく開くアニメーション中のため。ダイアログも同様の可能性）。開いたあと 1 秒ほど待つ（スクリーンショットを挟む）。
 - スワイプは `mouse.move` → `mouse.down` → `mouse.move(x, y, {steps: 12})` → `mouse.up` で再現できる（`SwipeToDismissBox` の削除まで動く）。
 - `colorScheme: 'dark'` を `newContext` に渡すと、`isSystemInDarkTheme()` が true になる。
+- ファイル選択（`<input type=file>` の `click()`）を確かめるときは、`page.on('filechooser', fc => fc.setFiles(path))` を**最初に**登録しておく（2026-10-16）。
+  クリックの直前に `page.waitForEvent('filechooser')` を呼ぶと、間に合わずにタイムアウトすることがあった（おそらく横取りの有効化が非同期なため）。
+  アプリ側は `navigator.userActivation.isActive` が true で、正しく呼べていた。先に登録する方法では 3 回とも通った。
+- ダウンロードは `page.on('download', d => d.saveAs(path))` で保存できる（2026-10-16 に確認）。書き出したバックアップを、そのまま復元の確認に使える。
 
 ## PR に画面のスクリーンショットを載せる
 GitHub の MCP では画像を添付できない。スクリーンショットを data URI で埋め込んだ HTML を Artifact として公開し、その URL を PR の説明に書いた

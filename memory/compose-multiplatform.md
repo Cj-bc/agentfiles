@@ -44,6 +44,9 @@ Wasm の Compose は canvas に描画する。HTML 側の `font-family` は効�
 ## Material3 の部品の小さな罠
 - `LinearProgressIndicator` は値が 0 でも右端に「停止インジケーター」の点を描く。要らなければ `drawStopIndicator = {}`。
 - `FilterChip` を並べて折り返すには `FlowRow`（`@OptIn(ExperimentalLayoutApi::class)`）。`compose.foundation` に入っている。
+- `SwipeToDismissBox` を `forEach` で並べるときは、行を `key(id) { ... }` で囲む。囲まないと、削除した行のスワイプ済みの状態が、
+  その位置に詰めてきた次の行に引き継がれ、次の行が削除の背景だけの表示になる（2026-10-16）。
+  `LazyColumn` なら `items(key = ...)`。削除の背景は `state.dismissDirection` がその向きのときだけ描くと、角丸の行の角から背景の色が見えない（同日、画面で確認）。
 - `material-icons-core` は `compose.material3` の推移的依存として解決されていることが多いが、宣言していないので頼らない。
 
 ## アイコンライブラリなしで SVG のアイコンを使う
