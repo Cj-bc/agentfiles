@@ -1,6 +1,6 @@
 ---
 name: compose-multiplatform
-description: Compose Multiplatform のリソースによる多言語化と Kotlin/Wasm の罠 — Wasm では stringResource が非同期で最初は空文字、Wasm にはシステムフォントが無い、保存値に表示文字列を使わない、SVG のパスからアイコンを作る、トークンは CompositionLocal で配る、kotlinx-datetime の YearMonth と保存形式、CMP 1.7.3 の DatePicker は kotlinx-datetime 0.7 以降で Wasm で落ちる
+description: Compose Multiplatform のリソースによる多言語化と Kotlin/Wasm の罠 — Wasm では stringResource が非同期で最初は空文字、Wasm にはシステムフォントが無い、保存値に表示文字列を使わない、SVG のパスからアイコンを作る、トークンは CompositionLocal で配る、kotlinx-datetime の YearMonth と保存形式、Compose 1.7.3 の DatePicker は Wasm で kotlinx-datetime 0.7 以降の通常版だと落ちる
 type: reference
 ---
 
