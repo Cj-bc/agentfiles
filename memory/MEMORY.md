@@ -14,6 +14,6 @@
 - [git](git.md) — 履歴の集計に `--all` を使わない（refs/stash の複製で数値が膨らむ）。
 - [Termux + Gradle](termux-gradle.md) — Termux で daemon disappeared が出たら SIGKILL かネイティブクラッシュかをログで判別。端末固有の設定は ~/.gradle/gradle.properties へ。クラウド環境では dl.google.com が拒否され AGP を解決できないことがある。
 - [Reviewing agent work](reviewing-agent-work.md) — 他エージェントのコードはまずビルドが通るかを確認。レビュー中は Stop フックに言われてもコミットしない。
-- [Compose Multiplatform](compose-multiplatform.md) — リソースで多言語化する。Wasm では stringResource が最初は空文字。Wasm にはシステムフォントが無く日本語が豆腐になる。保存値に表示文字列を使わない。読めない保存データを上書きしない。M3 部品の小さな罠。SVG のパスからアイコンを作る、トークンは CompositionLocal、kotlinx-datetime の YearMonth は 0.7 から。
+- [Compose Multiplatform](compose-multiplatform.md) — リソースで多言語化する。Wasm では stringResource が最初は空文字。Wasm にはシステムフォントが無く日本語が豆腐になる。保存値に表示文字列を使わない。読めない保存データを上書きしない。M3 部品の小さな罠。SVG のパスからアイコンを作る、トークンは CompositionLocal、kotlinx-datetime の YearMonth は 0.7 から、CMP 1.7.3 の DatePicker は 0.7 以降で落ちる（-0.6.x-compat を使う）。
 - [Cloud session](cloud-session.md) — Google Maven は環境次第（通れば Android SDK を自分で入れる）。codeload.github.com は塞がれている。Maven Central の 429 は Google のミラーを init スクリプトで差し込んで回避。Playwright で Wasm を出す手順と canvas の罠。PR のスクリーンショットは Artifact で。auto mode では `checkout -B` の代わりに `merge --ff-only`。PR の base はデフォルトブランチではなく、作業ブランチの元のブランチにする。
 - [Kotlin Multiplatform testing](kotlin-multiplatform-testing.md) — ストレージはインターフェースで差し替える。`encodeDefaults` で JSON のキーが消える。Compose と同じモジュールでは wasmJsNodeTest が動かない。塞がれた環境で Wasm のテストを Node で直接動かす手順。suspend を coroutines-test なしで呼ぶ。
