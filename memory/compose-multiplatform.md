@@ -1,6 +1,6 @@
 ---
 name: compose-multiplatform
-description: Compose Multiplatform のリソースによる多言語化と Kotlin/Wasm の罠 — Wasm では stringResource が非同期で最初は空文字、Wasm にはシステムフォントが無い、保存値に表示文字列を使わない、SVG のパスからアイコンを作る、トークンは CompositionLocal で配る、kotlinx-datetime の YearMonth と保存形式
+description: Compose Multiplatform のリソースによる多言語化と Kotlin/Wasm の罠 — Wasm では stringResource が非同期で最初は空文字、Wasm にはシステムフォントが無い、保存値に表示文字列を使わない、SVG のパスからアイコンを作る、トークンは CompositionLocal で配る、kotlinx-datetime の YearMonth と保存形式、CMP 1.7.3 の DatePicker は kotlinx-datetime 0.7 以降で Wasm で落ちる
 type: reference
 ---
 
@@ -58,10 +58,10 @@ Material の `colorScheme` も同じ値に揃えておくと、`DatePicker` や 
 ## kotlinx-datetime
 - `YearMonth` は 0.7.0 から。
 - 既定のシリアライザーは `LocalDate` → `"2026-10-14"`、`YearMonth` → `"2026-10"`（ISO）。独自の型が同じ ISO 文字列で保存していたなら、置き換えても保存形式は変わらない。テストで固定しておく。
-- **Compose Multiplatform 1.7.3 の material3 と 0.7.0 以降を組み合わせると、Wasm で `DatePicker` を開いた瞬間に落ちる。** material3 1.7.3 は 0.6.0 の
-  `kotlinx.datetime.Instant` を使っているが、0.7.0 でそのクラスが消えた（`kotlin.time.Instant` へ移った）。Wasm のリンカは参照をスタブに置き換え、
-  開くと `IrLinkageError` を投げる。コンパイルもテストも通るので、実際に開くまで気づかない（2026-10-16、オーナーが修正）。
-  直し方は `0.8.0-0.6.x-compat` のような `-0.6.x-compat` 版を使う（新しい API に古い `Instant` / `Clock` を残したもの）。Compose を 1.9 以降に上げても直る。
-  **ライブラリのメジャーな更新をしたら、依存元（material3 など）が使う画面を実際に開いて確かめる。**
+- **Compose Multiplatform 1.7.3 の material3 と 0.7.0 以降の通常版を組み合わせると、Wasm で `DatePicker` を開いた瞬間に落ちる。**
+  material3 1.7.3 が使う `kotlinx.datetime.Instant` が 0.7.0 で消え（`kotlin.time.Instant` へ移動）、Wasm のリンカが参照を `IrLinkageError` を投げるスタブに置き換えるため。
+  コンパイルは通り、画面を開くまで表に出ない（2026-10-16 のセッションは開かずにマージし、オーナーが直した）。`0.8.0-0.6.x-compat` のような
+  `-0.6.x-compat` 版（新しい API に古い `Instant` / `Clock` を残したもの）を使うか、Compose を 1.9 以降に上げる。
+  ライブラリを更新したら（0.x のマイナー更新でも互換性が壊れる）、依存元（material3 など）が使う画面を実際に開いて確かめる。
 - 入力の検証には `LocalDate.Formats.ISO.parseOrNull(text)`（`"2026-02-30"` や `"2026-1-01"` は null）。
 - 0.7.0 では npm の `format-util` に依存しなくなるので、Wasm の `kotlin-js-store/wasm/yarn.lock` が変わる。`./gradlew kotlinWasmUpgradeYarnLock` で更新する（クラウド環境でも動いた）。
