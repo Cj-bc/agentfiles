@@ -34,3 +34,17 @@ Skiko の wasm を Node で読み込めずにテストが走らない。ロジ�
 3. `npm i --no-save @js-joda/core`（例。`.mjs` が bare import するパッケージを入れる）（`NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` を付ける）。
 4. 小さなランナーを書く: `globalThis.kotlinTest = {}`、`describe` / `it` を配列に集める関数を `globalThis` に定義 → `import` した `startUnitTests()` を呼ぶ → 集めたテストを順に実行して PASS / FAIL を出す。
 Maven が `429 Too Many Requests` を返すことがあるので、30 秒空けて 2〜3 回リトライする（失敗するのは取得だけで、再実行で通る）。
+リトライでも通らないときは、[cloud-session.md](cloud-session.md) の Google のミラーを差し込む init スクリプトを使う。
+
+## suspend 関数を coroutines-test なしでテストする
+`kotlinx-coroutines-test` を依存に足さなくても、実際には中断しない suspend 関数（例: `getString` を差し替えた
+`suspend (CategoryId) -> String` を受け取る移行処理）なら、標準ライブラリだけで呼べる:
+```kotlin
+fun <T> runSuspend(block: suspend () -> T): T {
+    var result: Result<T>? = null
+    block.startCoroutine(Continuation(EmptyCoroutineContext) { result = it })
+    return checkNotNull(result) { "the block suspended" }.getOrThrow()
+}
+```
+依存を増やすと Nix の `deps.json` の再生成が要るプロジェクトでは、この方が安い。
+

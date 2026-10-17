@@ -34,7 +34,8 @@ org.gradle.vfs.watch=false                      # 仮説 2 の対策
 仮説 1 の根本対処は、開発者オプションの「子プロセスの制限を無効にする」（Android 14 以降）か、
 `adb shell settings put global settings_enable_monitor_phantom_procs false`。
 
-## クラウド（Claude Code on the web）環境では AGP を解決できない
-既定のネットワークポリシーでは `dl.google.com` が 403 で拒否されるため、Google Maven の
+## クラウド（Claude Code on the web）環境では AGP を解決できないことがある
+既定のネットワークポリシーでは `dl.google.com` が 403 で拒否されることがあり、そのときは Google Maven の
 AGP（`com.android.*` プラグイン）が解決できず、Android を含むビルドは設定段階で失敗する。
+環境によっては通るので、まず curl で確かめる（通ったときの SDK の入れ方は [cloud-session.md](cloud-session.md)）。
 再現が必要なら、ユーザーに環境の Network access で `dl.google.com` を許可してもらう。
