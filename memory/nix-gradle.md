@@ -26,7 +26,7 @@ type: reference
   ただしサンドボックス内で検証できていないので、PR にそう書く。
 - Gradle 側の 429 は [cloud-session.md](cloud-session.md) のミラーの init スクリプトで避けられるが、`nix build` の中では効かない（FOD が URL を直接取る）。
   curl の fetchurl は通るが、`nix build` は依存を並列に取るので Maven Central が 429 を返して失敗する（`--max-jobs 3` でも駄目だった）。
-  FOD の出力パスは名前とハッシュだけで決まるので、deps.json を URL とハッシュに展開して Google のミラーから先に入れておく:
+  FOD の出力パスは名前とハッシュ（と flat / recursive の別）だけで決まり、prefetch-file は deps.json の項目と同じ flat なので、deps.json を URL とハッシュに展開して Google のミラーから先に入れておく:
   `nix store prefetch-file --name <ファイル名> --expected-hash <hash> https://maven-central.storage-download.googleapis.com/maven2/<パス>`。
   `plugins.gradle.org/m2/` の項目も同じパスでミラーにあった。dl.google.com は 429 にならない。
   deps.json の展開は fetch-deps.nix の `decompressNameVer` と同じ（`"group/path#artifact/version[/classifier]": {ext: hash}`、キーは入れ子になりうる）。
