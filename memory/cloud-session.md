@@ -8,6 +8,7 @@ type: reference
 - `dl.google.com`（Google Maven）が 403 の環境がある。そのときは Android Gradle Plugin（`com.android.*`）を解決できず、
   Android を含むプロジェクトは設定フェーズで失敗する。環境によっては通る（下の「環境によっては dl.google.com が通る」を参照）。
 - `repo.maven.apache.org` と `registry.npmjs.org` は通る。ただし Maven Central は 429 が続くことがある（下の「ミラー」の節）。
+- `api.github.com` が 403。flake の `github:` 入力を取れない（git では取れる。[nix-gradle.md](nix-gradle.md) を参照）。
 - `codeload.github.com` が 403。Kotlin/Wasm の `kotlinWasmToolingSetup`（Kotlin 同梱の yarn.lock が GitHub の tarball を参照する）が失敗するので、
   `wasmJsBrowser*Distribution` / `*Run` のような webpack を使うタスクは動かない。
 - Node 製ツール（yarn / npm）は `NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` を付けないと TLS エラーになる。
@@ -44,6 +45,7 @@ settingsEvaluated {
 }
 ```
 `FAIL_ON_PROJECT_REPOS` の設定でも、settings 側のリポジトリなので問題ない。
+`nix build` の中の 429（Nix の FOD が直接取る）には効かない。そちらは [nix-gradle.md](nix-gradle.md) を参照。
 
 ## Android を含む KMP プロジェクトで Wasm だけを検証する
 リポジトリを scratchpad にコピーし（`git ls-files -z | xargs -0 -I{} cp --parents {} DEST/`）、
@@ -55,6 +57,7 @@ settingsEvaluated {
 2. 1 か所に集める:
    - `build/compileSync/wasmJs/main/developmentExecutable/kotlin/*`（`<module>.mjs` と `.wasm`）
    - `build/compose/skiko-runtime-processed-wasmjs/skiko.*`
+     （CMP 1.12 ではこのディレクトリが無い。`~/.gradle/caches` の `skiko-js-wasm-runtime-<版>.jar` を展開した `*.mjs` と `skiko.wasm` を全部置く）
    - `build/processedResources/wasmJs/main/composeResources`
 3. `.mjs` が bare import する npm パッケージ（例: `@js-joda/core`）は `npm i` し、`<script type="importmap">` で ESM ファイルに向ける。
    `index.html` には `<div id="composeApp">` と `<script type="module">import './<module>.mjs'</script>` を置く。

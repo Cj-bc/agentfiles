@@ -1,6 +1,6 @@
 ---
 name: compose-multiplatform
-description: Compose Multiplatform のリソースによる多言語化と Kotlin/Wasm の罠 — Wasm では stringResource が非同期で最初は空文字、Wasm にはシステムフォントが無い、保存値に表示文字列を使わない、SVG のパスからアイコンを作る、トークンは CompositionLocal で配る、kotlinx-datetime の YearMonth と保存形式、Compose 1.7.3 の DatePicker は Wasm で kotlinx-datetime 0.7 以降の通常版だと落ちる
+description: Compose Multiplatform のリソースによる多言語化と Kotlin/Wasm の罠 — Wasm では stringResource が非同期で最初は空文字、Wasm にはシステムフォントが無い、保存値に表示文字列を使わない、SVG のパスからアイコンを作る、トークンは CompositionLocal で配る、kotlinx-datetime の YearMonth と保存形式、Compose 1.7.3 の DatePicker は Wasm で kotlinx-datetime 0.7 以降の通常版だと落ちる、1.12 へ上げるときの罠（依存アクセサの非推奨、SwipeToDismissBox の onDismiss と復元される状態）
 type: reference
 ---
 
@@ -68,3 +68,16 @@ Material の `colorScheme` も同じ値に揃えておくと、`DatePicker` や 
   ライブラリを更新したら（0.x のマイナー更新でも互換性が壊れる）、依存元（material3 など）が使う画面を実際に開いて確かめる。
 - 入力の検証には `LocalDate.Formats.ISO.parseOrNull(text)`（`"2026-02-30"` や `"2026-1-01"` は null）。
 - 0.7.0 では npm の `format-util` に依存しなくなるので、Wasm の `kotlin-js-store/wasm/yarn.lock` が変わる。`./gradlew kotlinWasmUpgradeYarnLock` で更新する（クラウド環境でも動いた）。
+
+## Compose Multiplatform 1.7 → 1.12 に上げたときの罠（2026-10-18）
+- `compose.runtime` / `compose.material3` などの依存アクセサは非推奨。バージョンカタログに `org.jetbrains.compose.runtime:runtime` などを書く。
+  material3 は別の版で、CMP 1.12.2 に対応するのは `org.jetbrains.compose.material3:material3:1.9.0`（プラグイン jar の `ComposeBuildConfig.composeMaterial3Version` に入っている）。
+- CMP 1.12.2 + material3 1.9.0 なら、kotlinx-datetime の通常版（0.8.0）でも DatePicker が落ちない（Wasm で開いて日付を選べることを確認）。
+- `rememberSwipeToDismissBoxState(confirmValueChange = ...)` は非推奨。代わりに `SwipeToDismissBox(onDismiss = ...)` を使う。
+  `onDismiss` は「`settledValue` が閉じた側にある」ときに `LaunchedEffect` から呼ばれる。
+- **LazyColumn の項目の中で、スワイプで消した行を「元に戻す」と、行がスワイプ済みの状態で復元される。** LazyColumn は消えた項目の
+  rememberSaveable の状態を保持し、`rememberSwipeToDismissBoxState` は saveable だから。`confirmValueChange` を使っていた頃は
+  行が削除の背景のまま固まり、`onDismiss` に変えると戻した直後にもう一度削除された（スナックバーが出直すだけに見える）。
+  状態を `remember` で持てば直る。`SwipeToDismissBoxDefaults.positionalThreshold` は getter が `@Composable` なので `remember {}` の中では呼べない。先に変数へ取る:
+  `val t = SwipeToDismissBoxDefaults.positionalThreshold; val state = remember { SwipeToDismissBoxState(SwipeToDismissBoxValue.Settled, t) }`。
+  ライブラリを上げたら、更新前のビルドでも同じ操作をして比べると、もともとの不具合か回帰かを切り分けられる。
