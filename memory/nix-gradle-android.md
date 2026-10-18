@@ -21,11 +21,20 @@ APK が必要なら `com.android.application` だけを当てたモジュール�
 
 ## Nix 側
 - `androidenv.composeAndroidPackages` は unfree。`import nixpkgs { config = { allowUnfree = true; android_sdk.accept_license = true; }; }` が無いと評価で失敗する（devShell も）。
+- SDK の Build-Tools は、AGP が既定で使うバージョン（AGP 9.4 は 36.0.0）を入れる。無いと AGP がビルド中にダウンロードしようとし、
+  サンドボックスでは `Failed to find Build Tools revision 36.0.0`（その前に `Failed to download any source lists!`）で失敗する。
 - AGP が Maven から取る aapt2 はサンドボックスで動かない。`-Pandroid.aapt2FromMavenOverride=${sdk}/libexec/android-sdk/build-tools/<ver>/aapt2`（Nix 版は patchelf 済み）を gradleFlags に入れる。
   `ANDROID_HOME` も derivation の属性で渡す。
 - 依存を温める derivation（ビルドスクリプトだけをソースに、仮のソースでタスクを一度走らせて `GRADLE_USER_HOME` を出力する）の `deps.json` を web と Android で共有するなら、依存を温める derivation の `gradleBuildTask` に両方のタスクを空白区切りで書く（setup hook はクォートせずに展開する）。
   仮のソースを置くソースセットに `androidMain` も足す。
 - debug ビルドの署名鍵は `$HOME/.android/debug.keystore` にビルドのたびに作られる。毎回違う鍵になるので、作り直した APK は上書きインストールできない。
+
+## devShell の Gradle が Nix ストアの SDK を書き換える（2026-10-18）
+クラウド環境の nix は root の単一ユーザーインストールで、ストアに書き込める。`nix develop .#android -c gradle ...` を走らせたら、
+AGP が足りない Build-Tools 36.0.0 を `ANDROID_HOME`（`/nix/store/...-androidsdk/...`）の中へ勝手にダウンロードしていた。
+その SDK を使うサンドボックスのビルドも通ってしまい、ユーザーの手元（ストアが読み取り専用）でだけ失敗した。
+- devShell で Gradle を動かしたあとは `nix-store --verify-path <sdk のストアパス>` で改変が無いか確かめる。改変されていたら `nix-store --repair-path` で戻してから `nix build` で確かめ直す。
+- Gradle の出力に `Failed to download any source lists!` や SDK のダウンロードの跡があれば、SDK に足りないものがある。
 
 ## リポジトリの lock の hash がずれていることがある
 `yarn.lock` を変えたコミットで `fetchYarnDeps` の hash と `deps.json` が更新されておらず、master でも `nix build .#web` が通らなかった。
