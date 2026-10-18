@@ -29,9 +29,9 @@ APK が必要なら `com.android.application` だけを当てたモジュール�
   仮のソースを置くソースセットに `androidMain` も足す。
 - debug ビルドの署名鍵は `$HOME/.android/debug.keystore` にビルドのたびに作られる。毎回違う鍵になるので、作り直した APK は上書きインストールできない。
 
-## devShell の Gradle が Nix ストアの SDK を書き換える（2026-10-18）
+## devShell の Gradle が Nix ストアの SDK を書き換える（2026-10-18、tmp-budget-book）
 クラウド環境の nix は root の単一ユーザーインストールで、ストアに書き込める。`nix develop .#android -c gradle ...` を走らせたら、
-AGP が足りない Build-Tools 36.0.0 を `ANDROID_HOME`（`/nix/store/...-androidsdk/...`）の中へ勝手にダウンロードしていた。
+AGP が足りない Build-Tools 36.0.0 を `ANDROID_HOME`（`/nix/store/...-androidsdk/...`）の中へ自動でダウンロードしていた。
 その SDK を使うサンドボックスのビルドも通ってしまい、ユーザーの手元（ストアが読み取り専用）でだけ失敗した。
 - devShell で Gradle を動かしたあとは `nix-store --verify-path <sdk のストアパス>` で改変が無いか確かめる。改変されていたら `nix-store --repair-path` で戻してから `nix build` で確かめ直す。
 - Gradle の出力に `Failed to download any source lists!` や SDK のダウンロードの跡があれば、SDK に足りないものがある。
