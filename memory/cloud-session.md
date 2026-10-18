@@ -21,7 +21,7 @@ type: reference
    中身を `cmdline-tools/latest/` へ移す。
 2. `yes | cmdline-tools/latest/bin/sdkmanager --sdk_root=/opt/android-sdk "platforms;android-35" "build-tools;35.0.0" "platform-tools"`
 3. リポジトリに `local.properties`（`sdk.dir=/opt/android-sdk`、通常 .gitignore 済み）を置く。
-- `com.android.kotlin.multiplatform.library` のプロジェクトには `assembleDebug` が無い。`:composeApp:assembleAndroidMain` /
+- `com.android.kotlin.multiplatform.library` のプロジェクトには `assembleDebug` が無い（APK が必要なら [nix-gradle-android.md](nix-gradle-android.md) のアプリ用モジュールを参照）。`:composeApp:assembleAndroidMain` /
   `compileAndroidMain` / `testAndroidHostTest` を使う。
 
 ## Maven Central の 429 は Google のミラーで回避する
