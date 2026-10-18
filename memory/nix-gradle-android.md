@@ -1,6 +1,6 @@
 ---
 name: nix-gradle-android
-description: Nix flake で Kotlin Multiplatform + Android の APK をビルドする — KMP の Android ライブラリプラグインは APK を作れないのでアプリ用モジュールを足す、Compose リソースを assets にコピーする、androidenv の unfree 設定、サンドボックスでの aapt2、gradle.fetchDeps の共有、クラウド環境での FOD の証明書と 429
+description: Nix flake で Kotlin Multiplatform + Android の APK をビルドする — KMP の Android ライブラリプラグインは APK を作れないのでアプリ用モジュールを足す、Compose リソースを assets にコピーする、androidenv の unfree 設定、サンドボックスでの aapt2、gradle.fetchDeps の共有、クラウド環境での FOD の証明書と 429、Build-Tools を AGP の既定に揃える、devShell の Gradle がストアの SDK を書き換える罠
 type: reference
 ---
 
