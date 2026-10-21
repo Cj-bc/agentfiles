@@ -1,6 +1,6 @@
 ---
 name: kotlin-multiplatform-testing
-description: Kotlin Multiplatform のテストの罠 — Compose と同じモジュールの wasmJsNodeTest は Skiko の wasm を Node で読み込めず動かない。JSON のテストは encodeDefaults に注意。プラットフォーム依存はインターフェースで差し替える。並べ替えて保存するならメモリ上の並びも揃える（ULID を移行で振るときの順序も）
+description: Kotlin Multiplatform のテストの罠 — Compose と同じモジュールの wasmJsNodeTest は Skiko の wasm を Node で読み込めず動かない。JSON のテストは encodeDefaults に注意。プラットフォーム依存はインターフェースで差し替える
 type: reference
 ---
 
@@ -48,11 +48,3 @@ fun <T> runSuspend(block: suspend () -> T): T {
 ```
 依存を増やすと Nix の `deps.json` の再生成が要るプロジェクトでは、この方が安い。
 
-## 並べ替えて保存するなら、メモリ上の並びも揃える（2026-10-20）
-ファイルには ID 順・日付順で書き出したのに、メモリ上のリストは追加した順のままにしていた。そのため
-「保存 → 読み込み直し → `assertEquals(ledger.data, reopened.data)`」がリストの並び順の違いで失敗した。
-更新のたびに保存時の順序へ正規化すると、テストも通り、再読み込みで画面の並びが変わることもない。
-正規化する前に、画面がリストの順序に頼っていないかを確認する（例: 同じ日の取引は、データのリスト順のまま表示されていた）。
-ULID は時刻順なので、同じ日の中を ID の降順にすれば「新しく追加した順」になる。移行で ULID をまとめて振るときは、
-`generateUlid(timeMillis = now - index)` のように 1 ミリ秒ずつずらすと、元のリスト順を ID から復元できる
-（同じミリ秒の ULID どうしは、ランダム部分で順序が決まってしまう）。

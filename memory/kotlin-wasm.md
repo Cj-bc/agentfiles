@@ -33,8 +33,4 @@ JS 側で `queue = queue.then(task).catch(e => console.error(...))` と 1 本の
 ## JS の配列は文字列にして受け取る
 ファイル名の一覧などは `names.join('\n')` で 1 つの文字列にして返し、Kotlin 側で `split('\n')` すると、`JsArray` の変換を考えずに済む。
 
-## OPFS
-- `createWritable()` → `write()` → `close()` で書く。`close()` するまで元の内容は置き換わらない。
-  `createWritable()` は Safari では最近まで使えなかった（古い Safari では Worker の中で sync access handle を使う必要がある）。Chromium でしか確かめていない。
-- 存在しないファイルやディレクトリは `NotFoundError` で reject される。読み込みでは null に、削除では無視に変換する。
-- `navigator.storage.persist()` を呼んでおくと、ストレージが逼迫しても退避されにくくなる（失敗は無視してよい）。
+OPFS そのものの注意点は [web-api/opfs.md](web-api/opfs.md) を参照。
