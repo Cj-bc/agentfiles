@@ -26,7 +26,8 @@ APK が必要なら `com.android.application` だけを当てたモジュール�
 - AGP が Maven から取る aapt2 はサンドボックスで動かない。`-Pandroid.aapt2FromMavenOverride=${sdk}/libexec/android-sdk/build-tools/<ver>/aapt2`（Nix 版は patchelf 済み）を gradleFlags に入れる。
   `ANDROID_HOME` も derivation の属性で渡す。
 - 依存を温める derivation（ビルドスクリプトだけをソースに、仮のソースでタスクを一度走らせて `GRADLE_USER_HOME` を出力する）は、web 用と Android 用で分ける（下の「aarch64 では Android のタスクが動かない」を参照）。
-  `deps.json` は共有してよい。Android 用の derivation の `gradleBuildTask` に両方のタスクを空白区切りで書き（setup hook はクォートせずに展開する）、`deps.json` は x86_64-linux で `.#android.gradleDeps.mitmCache.updateScript` から作る（web 用の updateScript でも動くが、Android の依存が消える）。web 用は web のタスクだけにする（`deps.json` に余分な依存があっても困らない）。
+  `deps.json` は共有してよい。Android 用の derivation の `gradleBuildTask` に両方のタスクを空白区切りで書き（setup hook はクォートせずに展開する）、`deps.json` は x86_64-linux で `.#android.gradleDeps.mitmCache.updateScript` から作る（web 用の updateScript でも動くが、Android の依存が消える）。
+  web 用は web のタスクだけにする（`deps.json` に余分な依存があっても困らない）。
   仮のソースを置くソースセットに `androidMain` も足す。
 - debug ビルドの署名鍵は `$HOME/.android/debug.keystore` にビルドのたびに作られる。毎回違う鍵になるので、作り直した APK は上書きインストールできない。
 
