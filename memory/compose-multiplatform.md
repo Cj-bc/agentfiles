@@ -1,6 +1,6 @@
 ---
 name: compose-multiplatform
-description: Compose Multiplatform のリソースによる多言語化と Kotlin/Wasm の罠 — Wasm では stringResource が非同期で最初は空文字、Wasm にはシステムフォントが無い、保存値に表示文字列を使わない、SVG のパスからアイコンを作る、トークンは CompositionLocal で配る、kotlinx-datetime の YearMonth と保存形式、Compose 1.7.3 の DatePicker は Wasm で kotlinx-datetime 0.7 以降の通常版だと落ちる
+description: Compose Multiplatform のリソースによる多言語化と Kotlin/Wasm の罠 — Wasm では stringResource が非同期で最初は空文字、Wasm にはシステムフォントが無い、保存値に表示文字列を使わない、SVG のパスからアイコンを作る、トークンは CompositionLocal で配る、kotlinx-datetime の YearMonth と保存形式、Compose 1.7.3 の DatePicker は Wasm で kotlinx-datetime 0.7 以降の通常版だと落ちる、同じ可変オブジェクトを渡した子は strong skipping でスキップされる
 type: reference
 ---
 
@@ -68,3 +68,16 @@ Material の `colorScheme` も同じ値に揃えておくと、`DatePicker` や 
   ライブラリを更新したら（0.x のマイナー更新でも互換性が壊れる）、依存元（material3 など）が使う画面を実際に開いて確かめる。
 - 入力の検証には `LocalDate.Formats.ISO.parseOrNull(text)`（`"2026-02-30"` や `"2026-1-01"` は null）。
 - 0.7.0 では npm の `format-util` に依存しなくなるので、Wasm の `kotlin-js-store/wasm/yarn.lock` が変わる。`./gradlew kotlinWasmUpgradeYarnLock` で更新する（クラウド環境でも動いた）。
+
+## 同じ可変オブジェクトを渡した子はスキップされる（strong skipping）
+Kotlin 2.0.20 以降の Compose コンパイラでは strong skipping が既定で有効になっている。不安定な型の引数も
+インスタンスの同一性（`===`）で比較され、すべて同じなら composable はスキップされる（ラムダも自動で remember される）。
+`Screen(ledger, onChange)` のように同じ `ledger` を渡し続け、中身を書き換えてから親でカウンタ（`revision++`）を
+読み直して再コンポーズさせる作りでは、子の画面がスキップされて表示が古いままになる。さらに、子が前回のコンポジションで
+`ledger` から作った値（並べ替え用のリストや添字など）をキャプチャしたクリックのラムダも残るので、次の操作が古い値に対して
+実行され、データまで壊れる（2026-10-07、家計簿アプリの設定画面で、削除した直後の並べ替えが削除を打ち消した）。
+- 直し方: 共有データのプロパティを `var x by mutableStateOf(...)` にして、読み取りを Compose に追跡させる。
+  リストは `mutableStateListOf()` にするか、`mutableStateOf(listOf())` に新しいリストを代入し直す
+  （`mutableStateOf(mutableListOf())` の中身を変えても追跡されない）。カウンタや `key(revision)` での再コンポーズに頼らない。
+- 入力中の文字列などローカル状態が変わると再コンポーズされるので、たまたま動いて見える画面もある。
+  共有データだけを変える操作（削除・並べ替えなど）を続けて行い、ローカル状態に触れずにスクリーンショットで確認する。
