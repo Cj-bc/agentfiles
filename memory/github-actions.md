@@ -1,6 +1,6 @@
 ---
 name: github-actions
-description: GitHub Actions で Secrets を使うワークフローを書くときの知見 — Action を SHA で固定する手順（git ls-remote と ^{}、公開日の確認）、Environment の Secrets と再利用可能なワークフロー、Secrets のジョブと書き込み権限のジョブを分ける、setup-gradle のキャッシュの既定、actionlint をクラウドで動かす、Android の署名を環境変数から作る、GitHub App の Web フローは PKCE でも client_secret が必須
+description: GitHub Actions で Secrets を使うワークフローを書くときの知見 — Action を SHA で固定する手順（git ls-remote と ^{}、公開日の確認）、Environment の Secrets は composite action に inputs で渡す（再利用可能なワークフローでは空だった）、ログのマスクから短い Secret の値が分かる、Secrets のジョブと書き込み権限のジョブを分ける、setup-gradle のキャッシュの既定、actionlint をクラウドで動かす、Android の署名を環境変数から作る、GitHub App の Web フローは PKCE でも client_secret が必須
 type: reference
 ---
 
@@ -17,9 +17,16 @@ type: reference
 - **private リポジトリでは、無料プランだと Environment（とその Secrets）を使えない**（オーナーが docs.github.com の
   Managing environments で確認）。それでもジョブの `environment:` はエラーにならず、Secrets が空のまま動いた。
   Secrets が全部空で届いたら、まずリポジトリが private でないか、プランを確かめる。このリポジトリは公開して解決した。
+- **Secret の値が短い・ありふれていると、マスクの位置から値が分かる**。ありふれた単語の Secret があったせいで、ログ中の無関係な文字列がその単語の部分だけ `***` になり、
+  公開ログから値が読めた（2026-10-22）。キーストアのパスワードは長くランダムにするよう伝える。ただし、**推測した値そのものは公開の場に書かない**（[feedback](feedback_public_comment_security.md)）。
 - 公開すると、Release の添付と Actions の artifact（ログインしていれば誰でも）が公開になる。APK に埋め込む値（OAuth の Client secret など）は公開扱いになる、とレビューで指摘する。
-- 呼び出し側の `uses:` のジョブには `environment:` を書けない。再利用可能なワークフローのジョブに
-  `environment: ${{ inputs.environment }}` を書けば、そこで `secrets.X` として Environment の Secrets を読める（`secrets: inherit` は要らない）。
+- 呼び出し側の `uses:` のジョブには `environment:` を書けない。ドキュメント上は、再利用可能なワークフローのジョブに
+  `environment: ${{ inputs.environment }}` を書けば Environment の Secrets を読めることになっている。
+  **しかし実際には、ジョブは「deploying to debug」と記録されたのに、Secrets が全部空で届いた**（2026-10-22、tmp-budget-book。
+  Secrets は登録済み、リポジトリは公開済み。試したのが private の間に始まった run の再実行だけだったので、原因は切り分けられていない）。
+  **各ワークフローのジョブに `environment:` を書き、Secrets を composite action に inputs で明示的に渡す**形に変えたら、新しい run で届いた。
+  最初からこの形にする。composite action では `secrets` コンテキストを使えないので、inputs で渡すしかない。
+- PR のジョブが Environment で動いたかは、公開 PR のページの「had a problem deploying to debug」で分かる（API の environments はプロキシで拒否された）。
 - `uses:` のジョブにも `if:` と `permissions:` は書ける。呼ばれる側の権限は呼び出し側以下になる。
 - Release への添付など `contents: write` が要る処理は、Secrets を持たない別のジョブにし、APK は artifact で渡した。
 - ワークフローのトップに `permissions: {}` を置き、ジョブごとに必要な権限だけを付ける。

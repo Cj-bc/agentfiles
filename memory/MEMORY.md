@@ -4,6 +4,7 @@
 - [Skip git diff for fresh commits](feedback_git_diff.md) — don't run `git diff` when context is already full, especially on initial commits.
 - [Keep memories even after moving them into repo docs](feedback_memory_retention.md) — リポジトリへ移した知見も memory から消さない。
 - [Read agentfiles before starting work](feedback_read_agentfiles_first.md) — agentfiles がセッションにあれば、作業前に索引と関係トピックを読む。
+- [Review public comments for security](feedback_public_comment_security.md) — PR・issue へのコメントは送る前に読み直し、Secret の値や手がかりは書かずにセッション側でだけ伝える。
 
 ## Topic knowledge (read when working in that area)
 - [Refactoring](refactoring.md) — 正規表現の一括置換は連番・PascalCase埋め込み参照を取りこぼす、リネームはスコープを超えない。
@@ -18,5 +19,5 @@
 - [Cloud session](cloud-session.md) — Google Maven は環境次第（通れば Android SDK を自分で入れる）。codeload.github.com は塞がれている。Maven Central の 429 は Google のミラーを init スクリプトで差し込んで回避。Playwright で Wasm を出す手順と canvas の罠（filechooser は先に登録）。PR のスクリーンショットは Artifact で。auto mode では `checkout -B` の代わりに `merge --ff-only`。PR の base はデフォルトブランチではなく、作業ブランチの元のブランチにする。`rm -rf "$VAR"` は安全チェックで止まるので `mktemp -d` を使う。
 - [Kotlin Multiplatform testing](kotlin-multiplatform-testing.md) — ストレージはインターフェースで差し替える。`encodeDefaults` で JSON のキーが消える。Compose と同じモジュールでは wasmJsNodeTest が動かない。塞がれた環境で Wasm のテストを Node で直接動かす手順。suspend を coroutines-test なしで呼ぶ。
 - [Nix + Gradle + Android](nix-gradle-android.md) — KMP の Android ライブラリプラグインは APK を作れないのでアプリ用モジュールを足す、Compose 1.7 のリソースを assets にコピー、androidenv の unfree 設定、サンドボックスの aapt2。Build-Tools は AGP の既定に揃える。クラウドでは devShell の Gradle がストアの SDK を書き換えるので `nix-store --verify-path` で確かめる。
-- [GitHub Actions](github-actions.md) — Action を SHA で固定する手順（`^{}` と公開日）、Environment の Secrets は再利用可能なワークフローのジョブで読む、Secrets と書き込み権限のジョブを分ける、setup-gradle のキャッシュ、actionlint、Android の署名を環境変数から、GitHub App の Web フローは secret が必須。
+- [GitHub Actions](github-actions.md) — Action を SHA で固定する手順（`^{}` と公開日）、Environment の Secrets は各ジョブで読んで composite action に inputs で渡す（再利用可能なワークフローでは空で届いた）、Secrets と書き込み権限のジョブを分ける、setup-gradle のキャッシュ、actionlint、Android の署名を環境変数から、GitHub App の Web フローは secret が必須。
 - [Nix](nix.md) — 作業前に既存パッケージが今のままで通るか確かめる（lock の hash のずれ）。クラウドでのフレーク入力の 403、FOD の証明書（`nix-store --add-fixed` で回避）、FOD をまとめて取ると 429。
