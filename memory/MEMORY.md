@@ -5,6 +5,7 @@
 - [Keep memories even after moving them into repo docs](feedback_memory_retention.md) — リポジトリへ移した知見も memory から消さない。
 - [Read agentfiles before starting work](feedback_read_agentfiles_first.md) — agentfiles がセッションにあれば、作業前に索引と関係トピックを読む。
 - [Review public comments for security](feedback_public_comment_security.md) — PR・issue へのコメントは送る前に読み直し、Secret の値や手がかりは書かずにセッション側でだけ伝える。
+- [README is for users; agent notes go to AGENTS.md](feedback_readme_vs_agents.md) — README にタスクの手順や開発者向けの注意を書かない。残すなら AGENTS.md に、コードを読めば分かることは書かない。
 
 ## Topic knowledge (read when working in that area)
 - [Refactoring](refactoring.md) — 正規表現の一括置換は連番・PascalCase埋め込み参照を取りこぼす、リネームはスコープを超えない。
