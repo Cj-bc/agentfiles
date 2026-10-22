@@ -14,6 +14,10 @@ type: reference
 - `uses: owner/repo@<sha> # vX.Y.Z` とコメントで版を残す。
 
 ## Environment の Secrets と再利用可能なワークフロー（2026-10-22、tmp-budget-book）
+- **private リポジトリでは、無料プランだと Environment（とその Secrets）を使えない**（オーナーが docs.github.com の
+  Managing environments で確認）。それでもジョブの `environment:` はエラーにならず、Secrets が空のまま動いた。
+  Secrets が全部空で届いたら、まずリポジトリが private でないか、プランを確かめる。このリポジトリは公開して解決した。
+- 公開すると、Release の添付と Actions の artifact（ログインしていれば誰でも）が公開になる。APK に埋め込む値（OAuth の Client secret など）は公開扱いになる、とレビューで指摘する。
 - 呼び出し側の `uses:` のジョブには `environment:` を書けない。再利用可能なワークフローのジョブに
   `environment: ${{ inputs.environment }}` を書けば、そこで `secrets.X` として Environment の Secrets を読める（`secrets: inherit` は要らない）。
 - `uses:` のジョブにも `if:` と `permissions:` は書ける。呼ばれる側の権限は呼び出し側以下になる。
