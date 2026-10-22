@@ -26,6 +26,8 @@ type: reference
 - 既定ではデフォルトブランチでだけキャッシュを書き、他（PR など）では読むだけ。
 - release のビルドは `cache-disabled: true` にした（他のビルドが書いたキャッシュが release に入らないように）。
 - wrapper の検証（`validate-wrappers`）は v4 以降で既定で有効。
+- v6 の既定の `cache-provider: enhanced` は、プロプライエタリな商用サービス（gradle-actions-caching）。ログに "Enhanced Caching" と出る。
+  Secrets を扱うジョブでは、オープンソースの `cache-provider: basic`（GitHub Actions のキャッシュ）にした。
 
 ## actionlint をクラウドで動かす（2026-10-22）
 `proxy.golang.org` は通るので `GOBIN=<dir> go install github.com/rhysd/actionlint/cmd/actionlint@v1.7.7` で入る。shellcheck は入っていなかった（2026-10 時点）ので、
