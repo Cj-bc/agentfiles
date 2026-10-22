@@ -1,6 +1,6 @@
 ---
 name: cloud-session
-description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com が塞がれている、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする
+description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com が塞がれている、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする、`rm -rf "$VAR"` は安全チェックで止まるので mktemp -d を使う
 type: reference
 ---
 
@@ -105,3 +105,7 @@ GitHub の MCP では画像を添付できない。スクリーンショット�
 ## auto mode では `git checkout -B` が拒否される
 マージ済みの PR のブランチを base の最新に付け替えるとき、`git checkout -B <branch> origin/<base>` は「Git Destructive」として拒否された。
 ブランチが base の祖先なら `git merge --ff-only origin/<base>` で同じ結果になり、通る。
+
+## `rm -rf "$VAR"` は安全チェックで止まる（2026-10-22）
+変数を使った `rm -rf "$RUNNER_TEMP"` を含むコマンドは、空の変数で `rm -rf /` になりうるとして、Claude Code の組み込みの安全チェックに拒否された（人の承認が必要）。
+作業用のディレクトリは消して作り直さず、`mktemp -d <scratchpad>/x.XXXX` で毎回新しく作る。
