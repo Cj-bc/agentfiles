@@ -1,6 +1,6 @@
 ---
 name: cloud-session
-description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com が塞がれている、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする
+description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com と api.github.com が塞がれている（flake 入力は git で取る）、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする、環境の Gradle が古くて AGP が動かなければ ./gradlew
 type: reference
 ---
 
@@ -8,6 +8,7 @@ type: reference
 - `dl.google.com`（Google Maven）が 403 の環境がある。そのときは Android Gradle Plugin（`com.android.*`）を解決できず、
   Android を含むプロジェクトは設定フェーズで失敗する。環境によっては通る（下の「環境によっては dl.google.com が通る」を参照）。
 - `repo.maven.apache.org` と `registry.npmjs.org` は通る。ただし Maven Central は 429 が続くことがある（下の「ミラー」の節）。
+- `api.github.com` が 403（2026-10-18 は flake の `github:` 入力でこれが出た。tarball も取れない）。git では取れる。[nix.md](nix.md) を参照。
 - `codeload.github.com` が 403。Kotlin/Wasm の `kotlinWasmToolingSetup`（Kotlin 同梱の yarn.lock が GitHub の tarball を参照する）が失敗するので、
   `wasmJsBrowser*Distribution` / `*Run` のような webpack を使うタスクは動かない。
 - Node 製ツール（yarn / npm）は `NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` を付けないと TLS エラーになる。
@@ -44,6 +45,7 @@ settingsEvaluated {
 }
 ```
 `FAIL_ON_PROJECT_REPOS` の設定でも、settings 側のリポジトリなので問題ない。
+`nix build` の中の 429（Nix の FOD が直接取る）には効かない。そちらは [nix.md](nix.md) を参照。
 
 ## Android を含む KMP プロジェクトで Wasm だけを検証する
 リポジトリを scratchpad にコピーし（`git ls-files -z | xargs -0 -I{} cp --parents {} DEST/`）、
@@ -55,6 +57,7 @@ settingsEvaluated {
 2. 1 か所に集める:
    - `build/compileSync/wasmJs/main/developmentExecutable/kotlin/*`（`<module>.mjs` と `.wasm`）
    - `build/compose/skiko-runtime-processed-wasmjs/skiko.*`
+     （CMP 1.12 ではこのディレクトリが無い。`~/.gradle/caches` の `skiko-js-wasm-runtime-<版>.jar` を展開した `*.mjs` と `skiko.wasm` を全部置く）
    - `build/processedResources/wasmJs/main/composeResources`
 3. `.mjs` が bare import する npm パッケージ（例: `@js-joda/core`）は `npm i` し、`<script type="importmap">` で ESM ファイルに向ける。
    `index.html` には `<div id="composeApp">` と `<script type="module">import './<module>.mjs'</script>` を置く。
@@ -105,3 +108,8 @@ GitHub の MCP では画像を添付できない。スクリーンショット�
 ## auto mode では `git checkout -B` が拒否される
 マージ済みの PR のブランチを base の最新に付け替えるとき、`git checkout -B <branch> origin/<base>` は「Git Destructive」として拒否された。
 ブランチが base の祖先なら `git merge --ff-only origin/<base>` で同じ結果になり、通る。
+
+## 環境の Gradle が古くて AGP が動かないときは `./gradlew` を使う（2026-10-20）
+環境の `gradle` は 8.14.3 で、AGP 9.4 は「Minimum supported Gradle version is 9.6.0」で設定フェーズに失敗した。
+リポジトリのラッパー（`./gradlew`、9.6）ならそのまま動いた（ラッパーの配布物は services.gradle.org から取れた）。
+このとき `dl.google.com` は通ったので、上の手順で Android SDK を入れて `testAndroidHostTest` と `:androidApp:assembleDebug` まで実行できた。

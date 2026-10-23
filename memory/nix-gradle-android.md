@@ -39,7 +39,7 @@ AGP が足りない Build-Tools 36.0.0 を `ANDROID_HOME`（`/nix/store/...-andr
 - Gradle の出力に `Failed to download any source lists!` や SDK のダウンロードの跡があれば、SDK に足りないものがある。
 
 ## クラウド環境での事例（2026-10-18、tmp-budget-book）
-一般的な話は [nix.md](nix.md) にある。
+一般的な話は [nix.md](nix.md) にある。依存を上げたときに Nix 側で直すものは [nix-gradle.md](nix-gradle.md)。
 - 既存の `nix build .#web` が、`yarn.lock` を変えたコミットで `fetchYarnDeps` の hash と `deps.json` が更新されておらず、最初から通らなかった。
 - `fetchYarnDeps` は `NODE_EXTRA_CA_CERTS` を nixpkgs の cacert に固定している。Kotlin の tooling 用 `yarn.lock` にある `git+https://github.com/...` の依存は、
   中の `nix-prefetch-git` が `NIX_SSL_CERT_FILE` を `GIT_SSL_CAINFO` にするので、env を上書きしても通らなかった。
