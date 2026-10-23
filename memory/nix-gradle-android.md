@@ -1,6 +1,6 @@
 ---
 name: nix-gradle-android
-description: Nix flake で Kotlin Multiplatform + Android の APK をビルドする — KMP の Android ライブラリプラグインは APK を作れないのでアプリ用モジュールを足す、Compose リソースを assets にコピーする、androidenv の unfree 設定、サンドボックスでの aapt2、gradle.fetchDeps の共有、クラウド環境での事例、Build-Tools を AGP の既定に揃える、devShell の Gradle がストアの SDK を書き換える罠
+description: Nix flake で Kotlin Multiplatform + Android の APK をビルドする — KMP の Android ライブラリプラグインは APK を作れないのでアプリ用モジュールを足す、Compose リソースを assets にコピーする、androidenv の unfree 設定、サンドボックスでの aapt2、gradle.fetchDeps の共有、クラウド環境での事例、Build-Tools を AGP の既定に揃える、devShell の Gradle がストアの SDK を書き換える罠、aarch64（Termux）では Build-Tools の aapt2 が動かないので web の依存を Android から切り離す
 type: reference
 ---
 
@@ -25,7 +25,9 @@ APK が必要なら `com.android.application` だけを当てたモジュール�
   サンドボックスでは `Failed to find Build Tools revision 36.0.0`（その前に `Failed to download any source lists!`）で失敗する。
 - AGP が Maven から取る aapt2 はサンドボックスで動かない。`-Pandroid.aapt2FromMavenOverride=${sdk}/libexec/android-sdk/build-tools/<ver>/aapt2`（Nix 版は patchelf 済み）を gradleFlags に入れる。
   `ANDROID_HOME` も derivation の属性で渡す。
-- 依存を温める derivation（ビルドスクリプトだけをソースに、仮のソースでタスクを一度走らせて `GRADLE_USER_HOME` を出力する）の `deps.json` を web と Android で共有するなら、依存を温める derivation の `gradleBuildTask` に両方のタスクを空白区切りで書く（setup hook はクォートせずに展開する）。
+- 依存を温める derivation（ビルドスクリプトだけをソースに、仮のソースでタスクを一度走らせて `GRADLE_USER_HOME` を出力する）は、web 用と Android 用で分ける（下の「aarch64 では Android のタスクが動かない」を参照）。
+  `deps.json` は共有してよい。Android 用の derivation の `gradleBuildTask` に両方のタスクを空白区切りで書き（setup hook はクォートせずに展開する）、`deps.json` は x86_64-linux で `.#android.gradleDeps.mitmCache.updateScript` から作る（web 用の updateScript でも動くが、Android の依存が消える）。
+  web 用は web のタスクだけにする（`deps.json` に余分な依存があっても困らない）。
   仮のソースを置くソースセットに `androidMain` も足す。
 - debug ビルドの署名鍵は `$HOME/.android/debug.keystore` にビルドのたびに作られる。毎回違う鍵になるので、作り直した APK は上書きインストールできない。
 
@@ -37,7 +39,7 @@ AGP が足りない Build-Tools 36.0.0 を `ANDROID_HOME`（`/nix/store/...-andr
 - Gradle の出力に `Failed to download any source lists!` や SDK のダウンロードの跡があれば、SDK に足りないものがある。
 
 ## クラウド環境での事例（2026-10-18、tmp-budget-book）
-一般的な話は [nix.md](nix.md) にある。
+一般的な話は [nix.md](nix.md) にある。依存を上げたときに Nix 側で直すものは [nix-gradle.md](nix-gradle.md)。
 - 既存の `nix build .#web` が、`yarn.lock` を変えたコミットで `fetchYarnDeps` の hash と `deps.json` が更新されておらず、最初から通らなかった。
 - `fetchYarnDeps` は `NODE_EXTRA_CA_CERTS` を nixpkgs の cacert に固定している。Kotlin の tooling 用 `yarn.lock` にある `git+https://github.com/...` の依存は、
   中の `nix-prefetch-git` が `NIX_SSL_CERT_FILE` を `GIT_SSL_CAINFO` にするので、env を上書きしても通らなかった。
@@ -45,3 +47,15 @@ AGP が足りない Build-Tools 36.0.0 を `ANDROID_HOME`（`/nix/store/...-andr
   `cd .. && nix-store --add-fixed --recursive sha256 offline` で入れた（`offline` は `fetchYarnDeps` の FOD の `name`）。
 - `gradle.fetchDeps` の updateScript（`USE_BWRAP=0 $(nix build --print-out-paths .#<pkg>.gradleDeps.mitmCache.updateScript)`。属性のパスは `fetchDeps` を置いた derivation による）はそのまま動いた。
 - `deps.json` の依存を取りに行くと Maven Central が 429 を返した。`--keep-going --max-jobs 4` でやり直して通った。
+
+## aarch64（Termux）では Android のタスクが動かない（2026-10-21、tmp-budget-book）
+nixpkgs の androidenv の Build-Tools（36.0.0）は `linux` のアーカイブが 1 つだけで、Google が配っているのは x86_64 向け（`file` では未確認）。
+SDK の derivation は aarch64-linux でも評価もビルドも通るが、Nix の SDK の aapt2 を `aapt2FromMavenOverride` で渡していても、この aapt2 自体が
+`Cannot run program ".../build-tools/36.0.0/aapt2": Exec failed, error: 2 (No such file or directory)` で動かない（ENOENT になる原因は未確認）。
+- web と Android で依存を温める derivation を共有していたため、web のビルドも APK のタスクを走らせて、Termux の `nix run .#web` が失敗した。
+  web 用の derivation を分け、web のタスクだけを走らせ、`ANDROID_HOME` と aapt2 の override も渡さないようにしたら、Termux で通った。
+  AGP のプラグインを当てたプロジェクトがあっても、web のタスクだけなら SDK 無しで設定もビルドも通る。
+- web が SDK に依存していないかは `nix-store -qR $(nix eval --raw .#packages.aarch64-linux.web.drvPath) | grep androidsdk` で確かめられる（クラウドの x86_64 で評価し、0 件になることを確かめた）。
+- web のビルドのログに、アプリ用モジュールのタスク（`assembleDebug` など AGP のタスク）が出ていれば、Android のタスクが走っている（そのモジュールの `Configure project` は web だけでも出る）。
+- アーカイブは nixpkgs の `pkgs/development/mobile/androidenv/repo.json` の `packages.build-tools.<ver>.archives` で見られる。ただし x86_64 のバイナリでも `arch` は `all` になっている。`os` が `linux` のアーカイブが 1 つしか無ければ、aarch64 向けは無いと考える。
+- aarch64 で APK をビルドする方法はまだ見つけていない（Maven の aapt2 も、おそらく x86_64 向けしか無い。未確認）。
