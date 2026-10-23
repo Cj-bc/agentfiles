@@ -1,6 +1,6 @@
 ---
 name: cloud-session
-description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com が塞がれている、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする
+description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com が塞がれている、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする、環境の Gradle が古くて AGP が動かなければ ./gradlew
 type: reference
 ---
 
@@ -8,7 +8,7 @@ type: reference
 - `dl.google.com`（Google Maven）が 403 の環境がある。そのときは Android Gradle Plugin（`com.android.*`）を解決できず、
   Android を含むプロジェクトは設定フェーズで失敗する。環境によっては通る（下の「環境によっては dl.google.com が通る」を参照）。
 - `repo.maven.apache.org` と `registry.npmjs.org` は通る。ただし Maven Central は 429 が続くことがある（下の「ミラー」の節）。
-- `api.github.com` が 403。flake の `github:` 入力を取れない（git では取れる。[nix-gradle.md](nix-gradle.md) を参照）。
+- `api.github.com` が 403。flake の `github:` 入力を取れない（git では取れる。[nix.md](nix.md) を参照）。
 - `codeload.github.com` が 403。Kotlin/Wasm の `kotlinWasmToolingSetup`（Kotlin 同梱の yarn.lock が GitHub の tarball を参照する）が失敗するので、
   `wasmJsBrowser*Distribution` / `*Run` のような webpack を使うタスクは動かない。
 - Node 製ツール（yarn / npm）は `NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` を付けないと TLS エラーになる。
@@ -22,7 +22,7 @@ type: reference
    中身を `cmdline-tools/latest/` へ移す。
 2. `yes | cmdline-tools/latest/bin/sdkmanager --sdk_root=/opt/android-sdk "platforms;android-35" "build-tools;35.0.0" "platform-tools"`
 3. リポジトリに `local.properties`（`sdk.dir=/opt/android-sdk`、通常 .gitignore 済み）を置く。
-- `com.android.kotlin.multiplatform.library` のプロジェクトには `assembleDebug` が無い。`:composeApp:assembleAndroidMain` /
+- `com.android.kotlin.multiplatform.library` のプロジェクトには `assembleDebug` が無い（APK が必要なら [nix-gradle-android.md](nix-gradle-android.md) のアプリ用モジュールを参照）。`:composeApp:assembleAndroidMain` /
   `compileAndroidMain` / `testAndroidHostTest` を使う。
 
 ## Maven Central の 429 は Google のミラーで回避する
@@ -45,7 +45,7 @@ settingsEvaluated {
 }
 ```
 `FAIL_ON_PROJECT_REPOS` の設定でも、settings 側のリポジトリなので問題ない。
-`nix build` の中の 429（Nix の FOD が直接取る）には効かない。そちらは [nix-gradle.md](nix-gradle.md) を参照。
+`nix build` の中の 429（Nix の FOD が直接取る）には効かない。そちらは [nix.md](nix.md) を参照。
 
 ## Android を含む KMP プロジェクトで Wasm だけを検証する
 リポジトリを scratchpad にコピーし（`git ls-files -z | xargs -0 -I{} cp --parents {} DEST/`）、
@@ -108,3 +108,8 @@ GitHub の MCP では画像を添付できない。スクリーンショット�
 ## auto mode では `git checkout -B` が拒否される
 マージ済みの PR のブランチを base の最新に付け替えるとき、`git checkout -B <branch> origin/<base>` は「Git Destructive」として拒否された。
 ブランチが base の祖先なら `git merge --ff-only origin/<base>` で同じ結果になり、通る。
+
+## 環境の Gradle が古くて AGP が動かないときは `./gradlew` を使う（2026-10-20）
+環境の `gradle` は 8.14.3 で、AGP 9.4 は「Minimum supported Gradle version is 9.6.0」で設定フェーズに失敗した。
+リポジトリのラッパー（`./gradlew`、9.6）ならそのまま動いた（ラッパーの配布物は services.gradle.org から取れた）。
+このとき `dl.google.com` は通ったので、上の手順で Android SDK を入れて `testAndroidHostTest` と `:androidApp:assembleDebug` まで実行できた。
