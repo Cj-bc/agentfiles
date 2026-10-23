@@ -1,6 +1,6 @@
 ---
 name: cloud-session
-description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com と api.github.com が塞がれている（flake 入力は git で取る）、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする、環境の Gradle が古くて AGP が動かなければ ./gradlew、`rm -rf "$VAR"` は安全チェックで止まるので mktemp -d を使う
+description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com と api.github.com が塞がれている（flake 入力は git で取る）、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする、環境の Gradle が古くて AGP が動かなければ ./gradlew、`rm -rf "$VAR"` は安全チェックで止まるので mktemp -d を使う、Android だけの画面は Wasm の actual を偽の実装に差し替えて撮る、deviceScaleFactor 2 ではクリック座標を半分に
 type: reference
 ---
 
@@ -100,6 +100,7 @@ PR の購読後にオーナーから届くコメント（「レビューして�
   クリックの直前に `page.waitForEvent('filechooser')` を呼ぶと、間に合わずにタイムアウトすることがあった（おそらく横取りの有効化が非同期なため）。
   アプリ側は `navigator.userActivation.isActive` が true で、正しく呼べていた。先に登録する方法では 3 回とも通った。
 - ダウンロードは `page.on('download', d => d.saveAs(path))` で保存できる（2026-10-16 に確認）。書き出したバックアップを、そのまま復元の確認に使える。
+- `newContext({ deviceScaleFactor: 2 })` ではスクリーンショットが 2 倍の画素で保存されるが、`page.mouse.click(x, y)` は CSS ピクセル。画像上の座標をそのまま渡すと右下にずれた場所を押し、「クリックが効かない」ように見える。画像の座標を 2 で割って渡す（2026-10-23）。
 
 ## PR に画面のスクリーンショットを載せる
 GitHub の MCP では画像を添付できない。スクリーンショットを data URI で埋め込んだ HTML を Artifact として公開し、その URL を PR の説明に書いた
@@ -117,3 +118,10 @@ GitHub の MCP では画像を添付できない。スクリーンショット�
 ## `rm -rf "$VAR"` は安全チェックで止まる（2026-10-22）
 変数を使った `rm -rf "$RUNNER_TEMP"` を含むコマンドは、空の変数で `rm -rf /` になりうるとして、Claude Code の組み込みの安全チェックに拒否された（人の承認が必要）。
 作業用のディレクトリは消して作り直さず、`mktemp -d <scratchpad>/x.XXXX` で毎回新しく作る。
+
+## Android だけの機能の画面を Wasm で撮る（2026-10-23）
+Web 版では無効な機能（`expect fun remoteSync(): RemoteSync?` が Wasm で `null` など）の画面も、scratchpad のコピーで
+Wasm の `actual` を偽の実装（決まった結果を返す `object`）に差し替えれば、上の「Kotlin/Wasm を webpack なしで Chromium に出す」手順で撮れる
+（コピーの作り方は「Android を含む KMP プロジェクトで Wasm だけを検証する」と同じ）。
+偽の実装のデータ（ID など）は OPFS の実データから組み立てると、本物の型と変換をそのまま通せる。本物のリポジトリは触らない。PR には偽の同期で撮ったと書く。
+偽の実装も本物の呼び出し順と前提を守る（例: 本物は競合があるときに「選択なしでの解決」を呼ばない）。破ると本物にない例外が出るので、例外が出たらまず偽の実装を疑う。
