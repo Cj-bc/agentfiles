@@ -54,3 +54,11 @@ type: reference
 ## GitHub App のユーザートークン（Web フロー、2026-10-22 に docs.github.com で確認）
 PKCE（S256 のみ）に対応しているが、トークンの交換とリフレッシュには GitHub App でも `client_secret` が必須（Device Flow を除く）。
 ネイティブアプリでは secret を同梱するしかない。GitHub のドキュメント（Best practices for creating a GitHub App / OAuth app）は、secret を秘密にできないアプリでは同梱したうえで PKCE を使うよう勧めている。ビルド時に Secrets から注入しても APK からは取り出せる、とレビューで指摘する。
+
+## GitHub App のインストールと認可を 1 回の操作にする（2026-10-23、tmp-budget-book）
+- 「Request user authorization (OAuth) during installation」を有効にすると、インストール後に GitHub 自身が `/login/oauth/authorize?client_id=...` へ送る。
+  アプリは `state` も PKCE の `code_challenge` も付けられず、戻り先も登録した最初の Callback URL になる（docs.github.com の Generating a user access token の該当節）。ネイティブアプリでは使わない。
+- **Setup URL には独自スキーム（`jp.example://...`）を登録できない**（「Setup URL must be a valid URL」）。Callback URL には登録できた。
+- 採った形: サインインでまず `https://github.com/apps/<slug>/installations/new` を開き、ユーザーがアプリに戻った（`onRestart`）ときに、通常の認可（`state` + PKCE）を始める。
+  インストール先は `installation_id` ではなく、ユーザーのトークンで `GET /user/installations` → `/user/installations/{id}/repositories` から読む。
+- スラッグは秘密ではないので、Environments の Variables（`vars.X`）でワークフローから渡す。
