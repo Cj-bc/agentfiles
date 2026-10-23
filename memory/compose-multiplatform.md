@@ -1,6 +1,6 @@
 ---
 name: compose-multiplatform
-description: Compose Multiplatform のリソースによる多言語化と Kotlin/Wasm の罠 — Wasm では stringResource が非同期で最初は空文字、Wasm にはシステムフォントが無い、保存値に表示文字列を使わない、SVG のパスからアイコンを作る、トークンは CompositionLocal で配る、kotlinx-datetime の YearMonth と保存形式、Compose 1.7.3 の DatePicker は Wasm で kotlinx-datetime 0.7 以降の通常版だと落ちる、1.12 へ上げるときの罠（依存アクセサの非推奨、SwipeToDismissBox の onDismiss と復元される状態）
+description: Compose Multiplatform のリソースによる多言語化と Kotlin/Wasm の罠 — Wasm では stringResource が非同期で最初は空文字、Wasm にはシステムフォントが無い、保存値に表示文字列を使わない、SVG のパスからアイコンを作る、トークンは CompositionLocal で配る、kotlinx-datetime の YearMonth と保存形式、Compose 1.7.3 の DatePicker は Wasm で kotlinx-datetime 0.7 以降の通常版だと落ちる、1.12 へ上げるときの罠（依存アクセサの非推奨、SwipeToDismissBox の onDismiss と復元される状態）、画面を閉じる処理をその画面の rememberCoroutineScope で走らせない、action 付きスナックバーは既定で Indefinite
 type: reference
 ---
 
@@ -81,3 +81,15 @@ Material の `colorScheme` も同じ値に揃えておくと、`DatePicker` や 
   状態を `remember` で持てば直る。`SwipeToDismissBoxDefaults.positionalThreshold` は getter が `@Composable` なので `remember {}` の中では呼べない。先に変数へ取る:
   `val t = SwipeToDismissBoxDefaults.positionalThreshold; val state = remember { SwipeToDismissBoxState(SwipeToDismissBoxValue.Settled, t) }`。
   ライブラリを上げたら、更新前のビルドでも同じ操作をして比べると、もともとの不具合か回帰かを切り分けられる。
+
+## 自分を閉じる処理を、その画面の `rememberCoroutineScope` で走らせない（2026-10-23）
+ダイアログの確定ボタンで `scope.launch { runner.resolve() }`（`scope` はダイアログの `rememberCoroutineScope()`）とし、
+`resolve()` の最初でダイアログを閉じる状態（`merge = null`）にすると、ダイアログがコンポジションから外れた時点でその scope がキャンセルされ、
+後続の処理（データの開き直し、結果のスナックバー）が黙って走らない。テストでは見つからず、Playwright で画面を操作して初めて気づいた。
+画面より長く生きる処理は、持ち主のクラスが受け取った scope（`App` の `rememberCoroutineScope()` など）で launch する。
+
+## `showSnackbar` に action を付けると既定で消えない（2026-10-23）
+Material3 の `SnackbarHostState.showSnackbar(message, actionLabel)` は、`duration` を省くと action 付きなら `Indefinite` になり、
+閉じられるまで返らない。起動時の `LaunchedEffect` の中で await すると、後続の初期化（データを開くなど）が止まる。
+action 付きのスナックバーは別のコルーチンで launch し、`duration = SnackbarDuration.Long` などを明示する。
+action なしの短いスナックバーでも、await すると数秒待たされる点は同じ。
