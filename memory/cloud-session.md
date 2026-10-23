@@ -1,6 +1,6 @@
 ---
 name: cloud-session
-description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com が塞がれている、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする、環境の Gradle が古くて AGP が動かなければ ./gradlew
+description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com と api.github.com が塞がれている（flake 入力は git で取る）、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする、環境の Gradle が古くて AGP が動かなければ ./gradlew
 type: reference
 ---
 
@@ -8,7 +8,7 @@ type: reference
 - `dl.google.com`（Google Maven）が 403 の環境がある。そのときは Android Gradle Plugin（`com.android.*`）を解決できず、
   Android を含むプロジェクトは設定フェーズで失敗する。環境によっては通る（下の「環境によっては dl.google.com が通る」を参照）。
 - `repo.maven.apache.org` と `registry.npmjs.org` は通る。ただし Maven Central は 429 が続くことがある（下の「ミラー」の節）。
-- `api.github.com` が 403。flake の `github:` 入力を取れない（git では取れる。[nix.md](nix.md) を参照）。
+- `api.github.com` が 403（2026-10-18 は flake の `github:` 入力でこれが出た。tarball も取れない）。git では取れる。[nix.md](nix.md) を参照。
 - `codeload.github.com` が 403。Kotlin/Wasm の `kotlinWasmToolingSetup`（Kotlin 同梱の yarn.lock が GitHub の tarball を参照する）が失敗するので、
   `wasmJsBrowser*Distribution` / `*Run` のような webpack を使うタスクは動かない。
 - Node 製ツール（yarn / npm）は `NODE_EXTRA_CA_CERTS=/root/.ccr/ca-bundle.crt` を付けないと TLS エラーになる。

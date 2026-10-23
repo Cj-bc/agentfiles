@@ -10,7 +10,7 @@ lock（`yarn.lock` など）を変えたコミットで、それを固定する 
 hash mismatch のエラーの `got:` が新しい値。
 
 ## クラウド環境（プロキシ）での Nix
-- フレークの入力 `github:owner/repo` は tarball（`github.com/.../archive/...`）を取りに行き、403 になる。
+- フレークの入力 `github:owner/repo` は 403 で取れない（rev の解決に使う `api.github.com` も、tarball の `github.com/.../archive/...` → `codeload.github.com` も 403）。
   ローカルで試すだけなら `git clone` して `--override-input <input> git+file:///path?rev=<rev>` を付ける（lock は書き換えない）。
 - nix は daemon なしの単一ユーザーで、FOD には呼び出し側の `NIX_SSL_CERT_FILE`（`/root/.ccr/ca-bundle.crt`）がそのまま渡る。サンドボックスからは見えない。
   nixpkgs の fetcher には CA を nixpkgs の cacert に固定しているものがあり、プロキシの CA を信頼しない。env を上書きしても通らないことがある。
@@ -22,6 +22,6 @@ hash mismatch のエラーの `got:` が新しい値。
   やり直しても通らないとき（2026-10-18 は `--max-jobs 3` で 3 回とも 429）は、FOD の出力パスが名前とハッシュ（と flat / recursive の別）だけで決まることを使い、
   Google のミラーから同じ名前で先に store へ入れる: `nix store prefetch-file --name <ファイル名> --expected-hash <hash> https://maven-central.storage-download.googleapis.com/maven2/<パス>`。
   `deps.json` は fetch-deps.nix の `decompressNameVer` と同じ規則で URL に展開できる（`"group/path#artifact/version[/classifier]": {ext: hash}`、キーは入れ子になりうる）。
-  `plugins.gradle.org/m2/` の項目も同じパスでミラーにあった。dl.google.com は 429 にならない。
+  `plugins.gradle.org/m2/` の項目も同じパスでミラーにあった。dl.google.com は（通る環境では）429 にならない。
 
 具体的な事例は [nix-gradle-android.md](nix-gradle-android.md) の「クラウド環境での事例」を参照。
