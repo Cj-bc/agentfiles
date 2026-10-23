@@ -52,10 +52,10 @@ AGP が足りない Build-Tools 36.0.0 を `ANDROID_HOME`（`/nix/store/...-andr
 nixpkgs の androidenv の Build-Tools（36.0.0）は `linux` のアーカイブが 1 つだけで、Google が配っているのは x86_64 向け（`file` では未確認）。
 SDK の derivation は aarch64-linux でも評価もビルドも通るが、Nix の SDK の aapt2 を `aapt2FromMavenOverride` で渡していても、この aapt2 自体が
 `Cannot run program ".../build-tools/36.0.0/aapt2": Exec failed, error: 2 (No such file or directory)` で動かない（ENOENT になる原因は未確認）。
-- web と Android で依存を温める derivation を共有していたため、web のビルドも `:androidApp:...` のタスクを走らせて、Termux の `nix run .#web` が失敗した。
+- web と Android で依存を温める derivation を共有していたため、web のビルドも APK のタスクを走らせて、Termux の `nix run .#web` が失敗した。
   web 用の derivation を分け、web のタスクだけを走らせ、`ANDROID_HOME` と aapt2 の override も渡さないようにしたら、Termux で通った。
   AGP のプラグインを当てたプロジェクトがあっても、web のタスクだけなら SDK 無しで設定もビルドも通る。
 - web が SDK に依存していないかは `nix-store -qR $(nix eval --raw .#packages.aarch64-linux.web.drvPath) | grep androidsdk` で確かめられる（クラウドの x86_64 で評価し、0 件になることを確かめた）。
-- ログに `> Task :androidApp:...` があれば、web のビルドで Android のタスクが走っている（`Configure project :androidApp` は web だけでも出る）。
+- web のビルドのログに、アプリ用モジュールのタスク（`assembleDebug` など AGP のタスク）が出ていれば、Android のタスクが走っている（そのモジュールの `Configure project` は web だけでも出る）。
 - アーカイブは nixpkgs の `pkgs/development/mobile/androidenv/repo.json` の `packages.build-tools.<ver>.archives` で見られる。ただし x86_64 のバイナリでも `arch` は `all` になっている。`os` が `linux` のアーカイブが 1 つしか無ければ、aarch64 向けは無いと考える。
 - aarch64 で APK をビルドする方法はまだ見つけていない（Maven の aapt2 も、おそらく x86_64 向けしか無い。未確認）。
