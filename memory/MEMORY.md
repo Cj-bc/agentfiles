@@ -20,5 +20,5 @@
 - [OPFS](web-api/opfs.md) — 書き込みは createWritable → close（Safari は最近まで未対応）。存在しないものは NotFoundError。Playwright で中身を確かめる手順。
 - [Kotlin Multiplatform testing](kotlin-multiplatform-testing.md) — ストレージはインターフェースで差し替える。`encodeDefaults` で JSON のキーが消える。Compose と同じモジュールでは wasmJsNodeTest が動かない。塞がれた環境で Wasm のテストを Node で直接動かす手順。suspend を coroutines-test なしで呼ぶ。
 - [Nix + Gradle](nix-gradle.md) — 依存を上げたら Nix 側で一緒に直すもの（deps.json、mkGradle の hash、KGP の jar の gradleNN 変種と同梱 yarn.lock のハッシュ、androidenv の SDK）。
-- [Nix + Gradle + Android](nix-gradle-android.md) — KMP の Android ライブラリプラグインは APK を作れないのでアプリ用モジュールを足す、Compose 1.7 のリソースを assets にコピー、androidenv の unfree 設定、サンドボックスの aapt2。Build-Tools は AGP の既定に揃える。クラウドでは devShell の Gradle がストアの SDK を書き換えるので `nix-store --verify-path` で確かめる。
+- [Nix + Gradle + Android](nix-gradle-android.md) — KMP の Android ライブラリプラグインは APK を作れないのでアプリ用モジュールを足す、Compose 1.7 のリソースを assets にコピー、androidenv の unfree 設定、サンドボックスの aapt2。Build-Tools は AGP の既定に揃える。aarch64（Termux）では aapt2 が動かないので、web の依存を温める derivation を Android と分ける。クラウドでは devShell の Gradle がストアの SDK を書き換えるので `nix-store --verify-path` で確かめる。
 - [Nix](nix.md) — 作業前に既存パッケージが今のままで通るか確かめる（lock の hash のずれ）。クラウドでのフレーク入力の 403、FOD の証明書（`nix-store --add-fixed` で回避）、FOD をまとめて取ると 429（通らなければミラーから store を先に埋める）。
