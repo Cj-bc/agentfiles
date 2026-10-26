@@ -11,6 +11,7 @@ type: reference
 同じ storage で `Ledger(storage)` を 2 回作って「再読み込みで復元される」ことまで確かめられる。
 
 ## kotlinx.serialization の JSON テスト
+手で編集されうるデータの読み込みの罠（引用符付きの数値）は [kotlinx-serialization.md](kotlinx-serialization.md) を参照。
 - `Json { encodeDefaults = false }`（既定）だと、既定値と同じ値のプロパティは出力されない。
   `version = 1` や `description = ""`、`isRecurring = false`、空リストが JSON から消える。
   しかも `exportedAt = currentDate()` のような既定値は、必ず既定値と等しいので**常に**出力されない。
