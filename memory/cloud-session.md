@@ -1,6 +1,6 @@
 ---
 name: cloud-session
-description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com と api.github.com が塞がれている（flake 入力は git で取る）、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする、環境の Gradle が古くて AGP が動かなければ ./gradlew、`rm -rf "$VAR"` は安全チェックで止まるので mktemp -d を使う
+description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com と api.github.com が塞がれている（flake 入力は git で取る）、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする、環境の Gradle が古くて AGP が動かなければ ./gradlew、`rm -rf "$VAR"` は安全チェックで止まるので mktemp -d を使う、Compose (Wasm) の画面は Playwright を開いたままにする小さな HTTP サーバー越しに 1 手ずつ操作する
 type: reference
 ---
 
@@ -117,3 +117,11 @@ GitHub の MCP では画像を添付できない。スクリーンショット�
 ## `rm -rf "$VAR"` は安全チェックで止まる（2026-10-22）
 変数を使った `rm -rf "$RUNNER_TEMP"` を含むコマンドは、空の変数で `rm -rf /` になりうるとして、Claude Code の組み込みの安全チェックに拒否された（人の承認が必要）。
 作業用のディレクトリは消して作り直さず、`mktemp -d <scratchpad>/x.XXXX` で毎回新しく作る。
+
+## Compose (Wasm) の画面を 1 手ずつ操作する（2026-10-26）
+座標を決め打ちした一括のスクリプトでは、入力でエラー表示が消えるなどしてレイアウトがずれ、次のクリックが外れる。
+Playwright のページを開いたままにする小さな HTTP サーバー（`/click?x=&y=`、`/type?t=`、`/key?k=Control%2BA`、`/wheel?dy=`、`/quit`、毎回スクリーンショットを保存）を
+バックグラウンドで起動し、`curl` で 1 手ずつ送ってスクリーンショットを見ながら座標を決める。座標は CSS ピクセル（`deviceScaleFactor: 2` なら画像の半分）。
+- `/type` も上の「canvas を Playwright で操作するときの罠」のとおり ASCII だけ。
+- Compose のテキスト欄は、クリックしてから `Control+A` で全選択でき、そのまま `type` で置き換えられた。
+- Web 版にない機能（例: Android だけの同期）の画面は、scratchpad のコピーで偽の実装（インターフェースを満たすオブジェクト）を差し込み、起動時にデータを仕込んで出す。本物のリポジトリは触らない。
