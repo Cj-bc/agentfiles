@@ -26,4 +26,5 @@
 - [Nix + Gradle + Android](nix-gradle-android.md) — KMP の Android ライブラリプラグインは APK を作れないのでアプリ用モジュールを足す、Compose 1.7 のリソースを assets にコピー、androidenv の unfree 設定、サンドボックスの aapt2。Build-Tools は AGP の既定に揃える。aarch64（Termux）では aapt2 が動かないので、web の依存を温める derivation を Android と分ける。クラウドでは devShell の Gradle がストアの SDK を書き換えるので `nix-store --verify-path` で確かめる。
 - [GitHub Actions](github-actions.md) — Action を SHA で固定する手順（`^{}` と公開日）、Environment の Secrets は各ジョブで読んで composite action に inputs で渡す（再利用可能なワークフローでは空で届いた）、Secrets と書き込み権限のジョブを分ける、setup-gradle のキャッシュ、actionlint、Android の署名を環境変数から、GitHub App の Web フローは secret が必須、インストール時の認可は state と PKCE を付けられず Setup URL は独自スキーム不可。
 - [Nix](nix.md) — 作業前に既存パッケージが今のままで通るか確かめる（lock の hash のずれ）。クラウドでのフレーク入力の 403、FOD の証明書（`nix-store --add-fixed` で回避）、FOD をまとめて取ると 429（通らなければミラーから store を先に埋める）。
+- [Offline sync](offline-sync.md) — 端末が自動で作るレコードはランダム ID だとオフライン同期で二重になる。元データから決定的な ID を作れば汎用の 3-way merge のままで済む。端末・版をまたぐハッシュは `Random(seed)` に頼らず自前で。
 - [kotlinx.serialization](kotlinx-serialization.md) — 引用符付きの数値 `"1,200"` を Long の 1 と読む。手で編集されうるデータでは数値リテラルかを自分で確かめる（「デコーダが受け付けるか」で書いた検証も同じ寛容さを引き継ぐ）。
