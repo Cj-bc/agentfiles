@@ -133,6 +133,18 @@ When subtracting a duration from an Instant with negative nanoseconds in the res
 落とし、`java -jar flix.jar test` / `check` で動く（JDK 21 のサンドボックス環境で確認）。
 `nix` が使えない環境でもこれでローカル検証できる。
 
+## jar 直接実行は `packages.lock` を作る
+`java -jar flix.jar check` / `test` を走らせると、リポジトリ直下に空の `packages.lock`（`[lock]` / `version = 1`）ができる。
+追跡されておらず、変更とは無関係なので、コミットせずに消す（Stop フックが未追跡ファイルとして指摘してくる）。
+
+## 標準ライブラリの小さな事実（0.76.2 で確認）
+- `pub enum LocalDate(Int64) with Eq, Order, Hash` のように、単一ケースの enum には derive が付けられる
+  （レコードを持つ enum には付けられないので Instant は手書き）。
+- `Int64` の `/` と `Int64.remainder` は 0 方向へ切り捨て、`Int64.modulo` は床（結果は除数と同じ符号）。床除算は自前で書く。
+- `BigInt` のリテラルは `240_000ii`。`BigInt.clampToInt64(min = .., max = .., x)` で範囲に収めて戻せる。
+  `Int64` の量を足し引き・掛け算するときに BigInt を経由すると、`-Int64.minValue()` のような桁あふれを考えずに済む。
+- `String.padLeft(w, c, s)`。テストでは `List.forEach(x -> Assert..., xs)` で表形式のケースを回せる（`Assert` 効果のまま通る）。
+
 ## Design Principle: Naming for Clarity
 
 Align with established APIs when the domain is well-known (like Java's java.time). This reduces cognitive load for developers familiar with that ecosystem. Consistency matters more than achieving perfect consistency across the entire codebase — a brief import list documenting the rename is worth the clarity gained.
