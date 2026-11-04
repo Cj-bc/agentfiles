@@ -136,3 +136,14 @@ When subtracting a duration from an Instant with negative nanoseconds in the res
 ## Design Principle: Naming for Clarity
 
 Align with established APIs when the domain is well-known (like Java's java.time). This reduces cognitive load for developers familiar with that ecosystem. Consistency matters more than achieving perfect consistency across the entire codebase — a brief import list documenting the rename is worth the clarity gained.
+
+## enum の書き方で詰まりやすい点（Flix 0.75.1 で `check` して確認）
+
+- 複数ケースの enum は `pub enum Foo { case A({ x = String }) case B }`。`pub enum Foo ({ case ... })` のように
+  丸括弧で包むと `Expected <effect> before 'case'` という分かりにくいパースエラーになる。
+- ケースが 1 つでレコードだけを持つ型は `pub enum Foo({ a = Int32, b = String })` と書く。
+  レコード型の最後のフィールドの後ろにカンマを付けると `Trailing ','` エラーになる。
+- 型名がモジュール名の最後と同じ（`mod A.Foo` の中の `enum Foo`）だとその型は「companion」になり、
+  モジュールの**最初の**宣言でなければならない（E5975）。後ろの宣言への前方参照は問題ない。
+- 依存（`[dependencies]`）を解決できない環境では、`flix.toml` から依存を外したコピーで `check` すると、
+  依存に関係しない構文・型のエラーだけを確かめられる。
