@@ -147,3 +147,22 @@ Align with established APIs when the domain is well-known (like Java's java.time
   モジュールの**最初の**宣言でなければならない（E5975）。後ろの宣言への前方参照は問題ない。
 - 依存（`[dependencies]`）を解決できない環境では、`flix.toml` から依存を外したコピーで `check` すると、
   依存に関係しない構文・型のエラーだけを確かめられる。
+
+## モジュールと effect で詰まりやすい点（Flix 0.75.1 で `check` / `test` して確認）
+
+- **親モジュールを宣言しないと、外から参照できない。** `src/A/B.flix` に `pub mod A.B` だけがあり `src/A.flix`（`pub mod A {}`）がないと、
+  `check` は通るのにテストなどから `A.B.x` が `Undefined name` / `Undefined use` になる。エラーが出ないので気付きにくい。
+  親の階層ごとに `.flix` を置く（`A.flix`、`A/B.flix`、`A/B/C.flix`）。
+- ファイルのパスとモジュール名は一致させる（`mod A.B` は `A/B.flix`、E5623）。テストのファイルも同じ（`test/TestFoo.flix` に `mod TestFoo`）。
+- `run` は予約語なので関数名にできない。
+- シグネチャに書いた effect を本体で使わないとエラーになる（`Unused effect`、E6217）。スタブでも effect を実際に使う。
+- `Assert.assertEq` には比較する型の `Eq` と `ToString` が要る。
+- effect の違う関数を同じリストに入れるには、「自分の effect + 型変数」の形で返し、本体を `checked_ecast` で包む。
+  例：`def readTool(): AgentTool[FileRead + ef] = …(args -> checked_ecast({ … }))`。こうすると `readTool() :: bashTool() :: Nil` が
+  `List[AgentTool[FileRead + Process]]` になる。`checked_ecast` がないと `Unable to unify the effect formulas` になる。
+- 標準ライブラリに、JSON（`Util.Json`）、HTTP（`Net.Http` の `Http` effect）、ファイル（`Fs.FileRead` / `Fs.FileWrite`）、
+  プロセス（`Sys.Process`）、環境変数（`Sys.Env`）がある。ファイルの effect には範囲を絞るハンドラ（`withChroot`、`withAllowList` など）もある。
+  ソースは flix.jar を展開した `src/library/` で読める。プロセスの標準出力を読む `Sys.StdOut.read` は `IO` を要求する。
+- effect は `run { … } with handler Eff { def op(x, k) = k(値) }` で偽物に差し替えてテストできる。
+- 依存を取得できない環境では、使っている名前だけを持つ代わりのモジュールを置いて `check` できる（例：`src/Time/Instant.flix` に
+  `mod Time.Instant { pub enum Instant { case Epoch } }`）。標準ライブラリに `Time` があるので `mod Time {}` は書けない。
