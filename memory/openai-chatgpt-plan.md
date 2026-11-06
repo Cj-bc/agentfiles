@@ -26,7 +26,7 @@ type: reference
 - Codex CLI のクライアント ID で OAuth し、`https://chatgpt.com/backend-api/codex/responses` に送る方法。
   - 公式ドキュメントが案内するのは公開の Responses API だけ。"Use the public Responses API endpoint above for this ChatGPT plan usage flow; do not point it at ChatGPT's backend-api endpoints."（models-and-inference）。ただしこれは Sign in with ChatGPT で得たトークンの送り先についての文で、Codex CLI のクライアント ID を使う経路を禁止するとは書いていない。
   - 規約上の扱いは確認できていない（利用規約の本文を読めなかった）。flix-agent では、ユーザーに確認するまでこの経路は使わない方針にした。
-  - この経路を使っている実装：pi の「OpenAI Codex (legacy)」（`packages/ai/src/providers/openai-codex.ts`。クライアント ID は `packages/ai/src/auth/oauth/openai-codex.ts`）、tau の `src/tau_ai/openai_codex.py` と `src/tau_coding/oauth.py`。OpenCode 向けのコミュニティ製プラグインにも同じ経路のものがある（どれがどの経路かは確かめていない）。
+  - この経路を使っている実装：pi の「OpenAI Codex (legacy)」（`packages/ai/src/providers/openai-codex.ts`。クライアント ID は `packages/ai/src/auth/oauth/openai-codex.ts`）、tau の `src/tau_ai/openai_codex.py` と `src/tau_coding/oauth.py`。OpenCode 向けのコミュニティ製プラグインにも同じ経路のものがあるらしい（検索結果の題名に "Codex backend" とあるもの（cykonova/ai-opencode-openai-codex-auth）を見ただけで、中身は確かめていない）。
 - Codex CLI のログイン情報（`~/.codex/auth.json` など）を読み取って使う方法。公式ドキュメントには言及がない。公式の流れ（自分のアプリとして登録する）の外にある、というのは私の推測。
 
 ## 調べるときの注意
