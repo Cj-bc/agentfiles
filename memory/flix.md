@@ -168,6 +168,4 @@ Align with established APIs when the domain is well-known (like Java's java.time
 - ライブラリ側の CI が緑でも、依存として使えるとは限らない。使う側の CI で初めて分かることがある。
 - 使う側の依存を未リリースの版に上げると、CI は `Could not find flix.toml in release vX.Y.Z` で止まる。
   ライブラリをリリースするまで待つしかないので、PR にそう書いておく。
-- auto mode では、ダウンロードした `flix.jar` の `java -jar` 実行が分類器に拒否されることがある（上の「jar 直接実行」が使えないとき）。
-  そのときはユーザーに実行の許可を求めるか、`flix/flix` の該当版のソースを読んで挙動を確かめ、PR の CI で検証する。
-  `nix develop` は flake の `github:` 入力が 403 になることがある。git で取る回避策は [nix.md](nix.md) を参照。
+- クラウドセッションの auto mode で `flix.jar` を実行できないときは [cloud-session.md](cloud-session.md) を参照。
