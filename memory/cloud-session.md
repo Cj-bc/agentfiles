@@ -1,6 +1,6 @@
 ---
 name: cloud-session
-description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com と api.github.com が塞がれている（flake 入力は git で取る）、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする、環境の Gradle が古くて AGP が動かなければ ./gradlew、`rm -rf "$VAR"` は安全チェックで止まるので mktemp -d を使う、Compose (Wasm) の画面は Playwright を開いたままにする小さな HTTP サーバー越しに 1 手ずつ操作する
+description: Claude Code のクラウドセッション（プロキシ経由のネットワーク）でのビルドと動作確認の罠 — Google Maven は環境次第で塞がれる（通れば Android SDK を自分で入れる）、codeload.github.com と api.github.com が塞がれている（flake 入力は git で取る）、Maven Central の 429 は Google のミラーで回避、Playwright での canvas 操作の罠、PR のスクリーンショットは Artifact で、auto mode では merge --ff-only、auto mode ではダウンロードした jar の実行が拒否されることがある、Kotlin/Wasm を webpack なしで Chromium に出す方法、PR の base は作業ブランチの元のブランチにする、環境の Gradle が古くて AGP が動かなければ ./gradlew、`rm -rf "$VAR"` は安全チェックで止まるので mktemp -d を使う、Compose (Wasm) の画面は Playwright を開いたままにする小さな HTTP サーバー越しに 1 手ずつ操作する
 type: reference
 ---
 
@@ -108,6 +108,10 @@ GitHub の MCP では画像を添付できない。スクリーンショット�
 ## auto mode では `git checkout -B` が拒否される
 マージ済みの PR のブランチを base の最新に付け替えるとき、`git checkout -B <branch> origin/<base>` は「Git Destructive」として拒否された。
 ブランチが base の祖先なら `git merge --ff-only origin/<base>` で同じ結果になり、通る。
+
+## auto mode ではダウンロードした jar の実行が拒否されることがある（2026-11-06）
+GitHub Releases から落とした `flix.jar` の `java -jar flix.jar check` が、auto mode の分類器に理由なしで拒否された。
+そのときはユーザーに実行の許可を求めるか、ツールの該当版のソースを読んで挙動を確かめ、PR の CI で検証する。
 
 ## 環境の Gradle が古くて AGP が動かないときは `./gradlew` を使う（2026-10-20）
 環境の `gradle` は 8.14.3 で、AGP 9.4 は「Minimum supported Gradle version is 9.6.0」で設定フェーズに失敗した。
