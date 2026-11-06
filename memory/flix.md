@@ -147,3 +147,27 @@ Align with established APIs when the domain is well-known (like Java's java.time
   モジュールの**最初の**宣言でなければならない（E5975）。後ろの宣言への前方参照は問題ない。
 - 依存（`[dependencies]`）を解決できない環境では、`flix.toml` から依存を外したコピーで `check` すると、
   依存に関係しない構文・型のエラーだけを確かめられる。
+
+## Flix 0.79.0 のモジュールとパッケージ（2026-11-06、flix-agent の CI 修正で確認）
+
+コンパイラを動かせなかったので、`flix/flix` の v0.79.0 のソース（`Namer.checkOrphanModules`、
+`Resolver.tryLookupModule` / `lookupPackageUse`、`Name.rootOf`）を読んで仕組みを確かめ、両リポジトリの CI が通るのを見た。
+
+- **public なモジュールには親モジュールの宣言が必要**。`pub mod FlixAgent.Ai` だけがあり `FlixAgent` が無いと
+  `Orphaned module ... (missing parent ...)`（E5512）になる。`src/FlixAgent.flix` に `pub mod FlixAgent {}` を置いて直す。
+  - `pub` でないモジュール（テストの `mod TestTime.Instant` など）は検査されない。パッケージのルート直下のモジュール（`pub mod ParanoidTime` のように親を持たないもの）も検査されない。
+- **依存パッケージの宣言は、そのパッケージ専用のルート名前空間の下に置かれる**。使う側からは
+  `flix.toml` の `mount` を使って `use paranoidTime::ParanoidTime.Instant` のように `::` で参照する。
+  `use ParanoidTime.Instant` や `paranoidTime.ParanoidTime.Instant` では届かない。
+- **ライブラリのトップレベルのモジュール名を標準ライブラリと重ねない**。paranoid_time_flix は `Time.Instant` を定義していたが、
+  `Time` は標準ライブラリにある（`Time.Clock`、`Time.Duration` など）。
+  - 単体ビルドでは標準ライブラリの `Time` が親になるので CI は通る。依存として読み込まれるとパッケージのルートに `Time` が無く、Orphaned module になる。
+  - `pub mod Time {}` を足しても直らない。単体ビルドでは標準ライブラリと重複（DuplicateModule）し、パッケージでは標準ライブラリの `Time` を
+    隠すので `use Time.Clock` が解決できなくなる。
+  - 他と重ならない名前空間（`ParanoidTime`）に移して直した。
+- ライブラリ側の CI が緑でも、依存として使えるとは限らない。使う側の CI で初めて分かることがある。
+- 使う側の依存を未リリースの版に上げると、CI は `Could not find flix.toml in release vX.Y.Z` で止まる。
+  ライブラリをリリースするまで待つしかないので、PR にそう書いておく。
+- auto mode では、ダウンロードした `flix.jar` の `java -jar` 実行が分類器に拒否されることがある（上の「jar 直接実行」が使えないとき）。
+  そのときはユーザーに実行の許可を求めるか、`flix/flix` の該当版のソースを読んで挙動を確かめ、PR の CI で検証する。
+  `nix develop` は flake の `github:` 入力が 403 になることがある。git で取る回避策は [nix.md](nix.md) を参照。
