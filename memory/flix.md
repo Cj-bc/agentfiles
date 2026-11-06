@@ -149,6 +149,7 @@ Align with established APIs when the domain is well-known (like Java's java.time
   依存に関係しない構文・型のエラーだけを確かめられる。
   依存の名前を使っているファイルがあるときは、使っている名前だけを持つ代わりのモジュールを置く（例：`src/Time/Instant.flix` に
   `mod Time.Instant { pub enum Instant { case Epoch } }`）。標準ライブラリに `Time` があるので `mod Time {}` は書けない（E5410）。
+  これは 0.75.1 の頃の手順。0.79.0 で `mount` した依存（`use paranoidTime::…`）は、パッケージ自体がないと参照できないので、代わりのモジュールでは置き換えられない。
 
 ## モジュールと effect で詰まりやすい点（Flix 0.75.1 で `check` / `test` して確認）
 
@@ -170,5 +171,5 @@ Align with established APIs when the domain is well-known (like Java's java.time
   ソースは flix.jar を展開した `src/library/` で読める。`Process.stdout(ph)` が返す `StdOut` の読み出しは `Readable` のインスタンス
   （`type Aef = IO`）なので、プロセスの出力を読むには `IO` が要る。
 - effect は `run { … } with handler Eff { def op(x, k) = k(値) }` で偽物に差し替えてテストできる。
-- 依存は `flix.toml` で `mount` を付けると、その名前で参照する（0.79.0）。
+- 依存は `flix.toml` で `mount` を付け、その名前で参照する（0.79.0）。`mount` を外すと、接頭辞なしの `use` でも参照できなくなる（E3138）ので、別名ではなく参照に必要なものとして扱う。
   例：`"github:Cj-bc/paranoid_time_flix" = { version = "0.4.0", mount = "paranoidTime" }` なら `use paranoidTime::ParanoidTime.Instant`。
