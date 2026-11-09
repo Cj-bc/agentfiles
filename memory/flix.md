@@ -143,7 +143,7 @@ Align with established APIs when the domain is well-known (like Java's java.time
   丸括弧で包むと `Expected <effect> before 'case'` という分かりにくいパースエラーになる。
 - ケースが 1 つでレコードだけを持つ型は `pub enum Foo({ a = Int32, b = String })` と書く。
   レコード型の最後のフィールドの後ろにカンマを付けると `Trailing ','` エラーになる。
-- 型名がモジュール名の最後と同じ（`mod A.Foo` の中の `enum Foo`）だとその型は「companion」になり、
+- 型名や effect 名がモジュール名の最後と同じ（`mod A.Foo` の中の `enum Foo` や `eff Foo`）だとそれは「companion」になり、
   モジュールの**最初の**宣言でなければならない（E5975）。後ろの宣言への前方参照は問題ない。
 - 依存（`[dependencies]`）を解決できない環境では、`flix.toml` から依存を外したコピーで `check` すると、
   依存に関係しない構文・型のエラーだけを確かめられる。
@@ -163,8 +163,7 @@ Align with established APIs when the domain is well-known (like Java's java.time
 - `run` は予約語なので関数名にできない。
 - シグネチャに書いた effect を本体で使わないとエラーになる（`Unused effect`、E6217）。スタブでも effect を実際に使う。
 - `Assert.assertEq` には比較する型の `Eq` と `ToString` が要る。
-- enum のケースの引数にレコード（`case FileError({ path = String, reason = String })`）を使うと、`with Eq, ToString` が導出できない（E7027 / E7249、0.79.0 で確認）。複数の値は `case FileError(String, String)` のように並べる。
-- `eff Foo` もモジュール名と同じ名前なら companion になり、モジュールの最初に書く必要がある（E5975）。
+- enum のケースの引数にレコード（`case FileError({ path = String, reason = String })`）を使うと、`with Eq, ToString` が導出できない（E7027 / E7249、0.79.0 で確認）。ケースが 1 つでレコードだけを持つ形（`pub enum Foo({ … })`）も同じ。比較や表示が要るなら、複数の値は `case FileError(String, String)` のように並べる。
 - effect の違う関数を同じリストに入れるには、「自分の effect + 型変数」の形で返し、本体を `checked_ecast` で包む。
   例：`def readTool(): AgentTool[FileRead + ef] = …(args -> checked_ecast({ … }))`。こうすると `readTool() :: bashTool() :: Nil` が
   `List[AgentTool[FileRead + Process]]` になる。`checked_ecast` がないと `Unable to unify the effect formulas` になる。
