@@ -163,6 +163,8 @@ Align with established APIs when the domain is well-known (like Java's java.time
 - `run` は予約語なので関数名にできない。
 - シグネチャに書いた effect を本体で使わないとエラーになる（`Unused effect`、E6217）。スタブでも effect を実際に使う。
 - `Assert.assertEq` には比較する型の `Eq` と `ToString` が要る。
+- enum のケースの引数にレコード（`case FileError({ path = String, reason = String })`）を使うと、`with Eq, ToString` が導出できない（E7027 / E7249、0.79.0 で確認）。複数の値は `case FileError(String, String)` のように並べる。
+- `eff Foo` もモジュール名と同じ名前なら companion になり、モジュールの最初に書く必要がある（E5975）。
 - effect の違う関数を同じリストに入れるには、「自分の effect + 型変数」の形で返し、本体を `checked_ecast` で包む。
   例：`def readTool(): AgentTool[FileRead + ef] = …(args -> checked_ecast({ … }))`。こうすると `readTool() :: bashTool() :: Nil` が
   `List[AgentTool[FileRead + Process]]` になる。`checked_ecast` がないと `Unable to unify the effect formulas` になる。
