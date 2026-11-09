@@ -143,7 +143,34 @@ Align with established APIs when the domain is well-known (like Java's java.time
   丸括弧で包むと `Expected <effect> before 'case'` という分かりにくいパースエラーになる。
 - ケースが 1 つでレコードだけを持つ型は `pub enum Foo({ a = Int32, b = String })` と書く。
   レコード型の最後のフィールドの後ろにカンマを付けると `Trailing ','` エラーになる。
-- 型名がモジュール名の最後と同じ（`mod A.Foo` の中の `enum Foo`）だとその型は「companion」になり、
+- 型名や effect 名がモジュール名の最後と同じ（`mod A.Foo` の中の `enum Foo` や `eff Foo`）だとそれは「companion」になり、
   モジュールの**最初の**宣言でなければならない（E5975）。後ろの宣言への前方参照は問題ない。
 - 依存（`[dependencies]`）を解決できない環境では、`flix.toml` から依存を外したコピーで `check` すると、
   依存に関係しない構文・型のエラーだけを確かめられる。
+  依存の名前を使っているファイルがあるときは、使っている名前だけを持つ代わりのモジュールを置く（例：`src/Time/Instant.flix` に
+  `mod Time.Instant { pub enum Instant { case Epoch } }`）。標準ライブラリに `Time` があるので `mod Time {}` は書けない（E5410）。
+  これは 0.75.1 の頃の手順。0.79.0 で `mount` した依存（`use paranoidTime::…`）は、パッケージ自体がないと参照できないので、代わりのモジュールでは置き換えられない。
+
+## モジュールと effect で詰まりやすい点（Flix 0.75.1 で `check` / `test` して確認）
+
+- **親モジュールを宣言しないと、外から参照できない。** `src/A/B.flix` に `pub mod A.B` だけがあり `src/A.flix`（`pub mod A {}`）がないと、
+  そのモジュール自体にはエラーが出ない。参照している側（テストなど）だけが `Undefined name` / `Undefined use` になり（`check` でも `test` でも）、
+  原因が親の不足だとは示されないので気付きにくい。途中の階層の親がない場合（`A.flix` はあるが `A/B.flix` がなく `A/B/C.flix` がある）は、
+  `Orphaned module ... (missing parent ...)`（E5512）とはっきり出る。親の階層ごとに `.flix` を置く。
+  **Flix 0.79.0 では、一番上の親がないときも E5512 が出る**（2026-11-06 に確認）。上の「エラーが出ない」は 0.75.1 での挙動。
+- `pub mod A.B` はファイルのパスと一致させる（`A/B.flix`。違うと E5623）。`pub` のない `mod` には、この検査はかからない
+  （テストの `mod TestFoo` も含む）。それでも揃えておく方がよい。
+- `run` は予約語なので関数名にできない。
+- シグネチャに書いた effect を本体で使わないとエラーになる（`Unused effect`、E6217）。スタブでも effect を実際に使う。
+- `Assert.assertEq` には比較する型の `Eq` と `ToString` が要る。
+- enum のケースの引数にレコード（`case FileError({ path = String, reason = String })`）を使うと、`with Eq, ToString` が導出できない（E7027 / E7249、0.79.0 で確認）。ケースが 1 つでレコードだけを持つ形（`pub enum Foo({ … })`）も同じ。比較や表示が要るなら、複数の値は `case FileError(String, String)` のように並べる。
+- effect の違う関数を同じリストに入れるには、「自分の effect + 型変数」の形で返し、本体を `checked_ecast` で包む。
+  例：`def readTool(): AgentTool[FileRead + ef] = …(args -> checked_ecast({ … }))`。こうすると `readTool() :: bashTool() :: Nil` が
+  `List[AgentTool[FileRead + Process]]` になる。`checked_ecast` がないと `Unable to unify the effect formulas` になる。
+- 標準ライブラリに、JSON（`Util.Json`）、HTTP（`Net.Http` の `Http` effect）、ファイル（`Fs.FileRead` / `Fs.FileWrite`）、
+  プロセス（`Sys.Process`）、環境変数（`Sys.Env`）がある。ファイルの effect には範囲を絞るハンドラ（`withChroot`、`withAllowList` など）もある。
+  ソースは flix.jar を展開した `src/library/` で読める。`Process.stdout(ph)` が返す `StdOut` の読み出しは `Readable` のインスタンス
+  （`type Aef = IO`）なので、プロセスの出力を読むには `IO` が要る。
+- effect は `run { … } with handler Eff { def op(x, k) = k(値) }` で偽物に差し替えてテストできる。
+- 依存は `flix.toml` で `mount` を付け、その名前で参照する（0.79.0）。`mount` を外すと、接頭辞なしの `use` でも参照できなくなる（E3138）ので、別名ではなく参照に必要なものとして扱う。
+  例：`"github:Cj-bc/paranoid_time_flix" = { version = "0.4.0", mount = "paranoidTime" }` なら `use paranoidTime::ParanoidTime.Instant`。
