@@ -125,3 +125,7 @@ Playwright のページを開いたままにする小さな HTTP サーバー（
 - `/type` も上の「canvas を Playwright で操作するときの罠」のとおり ASCII だけ。
 - Compose のテキスト欄は、クリックしてから `Control+A` で全選択でき、そのまま `type` で置き換えられた。
 - Web 版にない機能（例: Android だけの同期）の画面は、scratchpad のコピーで偽の実装（インターフェースを満たすオブジェクト）を差し込み、起動時にデータを仕込んで出す。本物のリポジトリは触らない。
+
+## auto mode では、ダウンロードした jar を実行できないことがある
+2026-11-11、GitHub のリリースから落とした `flix.jar` の `java -jar … test` が、auto mode の分類器に「外部のコード」として拒否された。ダウンロードまではできる。
+**How to apply:** 回避しようとしない。ライブラリのソースを読むだけなら jar を `unzip` する（`src/library/`）。ビルドとテストは PR の CI で確かめる。

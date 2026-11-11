@@ -174,3 +174,9 @@ Align with established APIs when the domain is well-known (like Java's java.time
 - effect は `run { … } with handler Eff { def op(x, k) = k(値) }` で偽物に差し替えてテストできる。
 - 依存は `flix.toml` で `mount` を付け、その名前で参照する（0.79.0）。`mount` を外すと、接頭辞なしの `use` でも参照できなくなる（E3138）ので、別名ではなく参照に必要なものとして扱う。
   例：`"github:Cj-bc/paranoid_time_flix" = { version = "0.4.0", mount = "paranoidTime" }` なら `use paranoidTime::ParanoidTime.Instant`。
+
+## `Net.Http` の挙動（Flix 0.79.0 の `src/library/Net/` で確認、2026-11-11）
+
+- `HttpRequest.withFollowRedirects(false)` は、本物のハンドラ（`HttpLayer.doRequest`）でも効く。既定のクライアントを使わず、`HttpClient.Redirect.NEVER` のクライアントを作る。既定（`true`）の `Redirect.NORMAL` は、HTTPS → HTTP 以外なら別のホストへも進み、自分で付けたヘッダー（`Authorization` を含む）を引き継ぐ（JDK の `HttpClient` の挙動。307/308 では本文も送り直す）。認証付きのリクエストでは `false` にする。
+- `Http.withLogging` が出力するのはメソッド・URL・ステータス・本文のバイト数・エラーだけで、ヘッダーは出さない。ただし、URL に資格情報を入れればログに出る。
+- 偽の `Http` ハンドラで継続 `k` を呼ばずに値を返すと（例：`run` の本体が `Bool` を返すなら `def request(_req, _k) = true`）、その値が `run` 全体の結果になる。何も送らずに「リクエストまで進んだか」を確かめられる。
