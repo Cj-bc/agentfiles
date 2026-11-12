@@ -5,6 +5,7 @@
 - [Keep memories even after moving them into repo docs](feedback_memory_retention.md) — リポジトリへ移した知見も memory から消さない。
 - [Read agentfiles before starting work](feedback_read_agentfiles_first.md) — agentfiles がセッションにあれば、作業前に索引と関係トピックを読む。
 - [Review public comments for security](feedback_public_comment_security.md) — PR・issue へのコメントは送る前に読み直し、Secret の値や手がかりは書かずにセッション側でだけ伝える。
+- [Answer PR questions on the PR](feedback_answer_pr_questions_on_pr.md) — PR のコメントで意見を尋ねられたら、セッション側だけでなく PR にもコメントで答える。
 - [Wrap primitive identifiers in their own types](feedback_branded_identifiers.md) — ID や名前などの識別子をプリミティブで持つときは、専用の型（branded type）で包む。
 - [README is for users; agent notes go to AGENTS.md](feedback_readme_vs_agents.md) — README にタスクの手順や開発者向けの注意を書かない。残すなら AGENTS.md に、コードを読めば分かることは書かない。
 
