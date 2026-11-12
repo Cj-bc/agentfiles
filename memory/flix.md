@@ -132,6 +132,7 @@ When subtracting a duration from an Instant with negative nanoseconds in the res
 `flix.toml` の `flix = "X.Y.Z"` に対応する `https://github.com/flix/flix/releases/download/vX.Y.Z/flix.jar` を
 落とし、`java -jar flix.jar test` / `check` で動く（JDK 21 のサンドボックス環境で確認）。
 `nix` が使えない環境でもこれでローカル検証できる。
+0.79.0 の `check` / `test` は、作業ディレクトリに `packages.lock`（依存のハッシュ）を作る。リポジトリが追跡していなければ、自分のタスクのコミットに混ぜない。
 
 ## Design Principle: Naming for Clarity
 
@@ -174,3 +175,35 @@ Align with established APIs when the domain is well-known (like Java's java.time
 - effect は `run { … } with handler Eff { def op(x, k) = k(値) }` で偽物に差し替えてテストできる。
 - 依存は `flix.toml` で `mount` を付け、その名前で参照する（0.79.0）。`mount` を外すと、接頭辞なしの `use` でも参照できなくなる（E3138）ので、別名ではなく参照に必要なものとして扱う。
   例：`"github:Cj-bc/paranoid_time_flix" = { version = "0.4.0", mount = "paranoidTime" }` なら `use paranoidTime::ParanoidTime.Instant`。
+
+## HTTP と JSON の標準ライブラリ（Flix 0.79.0、2026-11-09 に flix-agent の Anthropic アダプタで確認）
+
+- **JSON は `Util.Json.Json`**（`JArray(Vector[Json])`・`JBool`・`JNull`・`JNumber(BigDecimal)`・`JObject(Map[String, Json])`・`JString`）。
+  `with Eq` と `ToString`（コンパクトな JSON）があるので、`Assert.assertEq` でそのまま比べられる。`JObject` は `Map` なので、キーの順序に関係なく等しい。
+  - 作る：`JObject(List.toMap(("k", JString("v")) :: Nil))`、`JArray(List.toVector(l))`、数は `JNumber(Int32.toBigDecimal(n))`。
+  - 読む・書く：`Util.Json.parse(s): Result[JsonError, Json]`、`Util.Json.toCompactString(j)`。
+  - テストの期待値は、JSON の文字列を `parse` して作ると読みやすい（`json("{\"a\":1}")` のような小さな関数を置き、失敗は `bug!`）。
+- **HTTP は `Net.Http` の `eff Http { def request(req: HttpRequest): Result[IoError, HttpResponse] }`。** 本物のハンドラは `Http.runWithIO`（`@DefaultHandler`）。
+  - リクエストは `Net.HttpRequest.postWith(url, body) |> HttpRequest.setHeader(name, value) |> …` で組み立てる。
+    ヘッダーは `Map[String, List[String]]`（`setHeader` は置き換え、`withHeader` は追加）。
+  - **既定ではタイムアウトがない**（`requestTimeout = None`）。長い応答を待つなら `withTimeout(Duration.of(10, TimeUnit.Minutes))`。
+  - **既定ではリダイレクトを追う**（`followRedirects = true`）。秘密のヘッダーを付けるリクエストは `withFollowRedirects(false)` にする。
+    `false` のときは `Net.HttpLayer` が `HttpClient.Redirect.NEVER` のクライアントを作るので、本物のハンドラでも効く。
+  - 応答は `HttpResponse.status` / `body`（`String`）/ `isSuccess`。偽の応答は `HttpResponse.HttpResponse({ url, status, headers = Map.empty(), body = Net.Body.Text(s) })`。
+  - **Java のヘッダー検証の失敗は、ヘッダーの値ごと `IoError` のメッセージに入る**（`IllegalArgumentException` → `IoError(InvalidInput, msg)`）。
+    改行の残った API キーなどを渡すと、エラーを表示しただけでキーが漏れる。送る前に値を検証する。
+    URL も同じで、`URI.create` の失敗は URL ごとメッセージに入る（userinfo の資格情報を含みうる）。
+  - 再試行・間隔・ログなどのミドルウェア（`withRetry`、`withMinInterval`、`withLogging` など）もある。`withLogging` はヘッダーを出力しないが、URL とエラー（`${err}`）はそのまま出すので、上のヘッダー検証の失敗や userinfo 付きの URL は漏れる。
+- **送ったリクエストを確かめるテスト：** ハンドラで継続 `k` を呼ばずに値を返すと、その値が `run` 全体の結果になり、以降は実行されない。
+  ```flix
+  let sent = run {
+      discard Adapter.runWith(config(), () -> Llm.complete(model(), context()));
+      None
+  } with handler Http {
+      def request(req, _k) = Some(req)
+  };
+  ```
+  同じ形で「`Http.request` まで進んだか」を `Bool` で返せる（`def request(_req, _k) = true`、本体の最後は `false`）。
+- ハンドラの `def` の本体に文を複数書くときは `{ … }` で囲む。囲まずに `Ref.put(…); k(…)` と書くと `Expected '}' before ';'` になる。
+- `region rc { let r = Ref.fresh(rc, false); … }` で、ハンドラの中から書ける変数を作れる。
+- `forM ( x <- r1; y <- r2 ) yield …` は `Result` にも `Option` にも使える。`Result.traverse(f, l)` で `List` の各要素に `Result` を返す関数を当てられる。
