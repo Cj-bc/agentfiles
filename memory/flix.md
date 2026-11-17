@@ -157,6 +157,7 @@ Align with established APIs when the domain is well-known (like Java's java.time
   そのモジュール自体にはエラーが出ない。参照している側（テストなど）だけが `Undefined name` / `Undefined use` になり（`check` でも `test` でも）、
   原因が親の不足だとは示されないので気付きにくい。途中の階層の親がない場合（`A.flix` はあるが `A/B.flix` がなく `A/B/C.flix` がある）は、
   `Orphaned module ... (missing parent ...)`（E5512）とはっきり出る。親の階層ごとに `.flix` を置く。
+  親の `.flix` は空でなくてよい（effect を宣言した `Agent/Shell.flix` の `pub mod …Shell` が `Agent/Shell/Process.flix` の親を兼ねられる。0.79.0 で確認）。
   **Flix 0.79.0 では、一番上の親がないときも E5512 が出る**（2026-11-06 に確認）。上の「エラーが出ない」は 0.75.1 での挙動。
 - `pub mod A.B` はファイルのパスと一致させる（`A/B.flix`。違うと E5623）。`pub` のない `mod` には、この検査はかからない
   （テストの `mod TestFoo` も含む）。それでも揃えておく方がよい。
@@ -174,3 +175,11 @@ Align with established APIs when the domain is well-known (like Java's java.time
 - effect は `run { … } with handler Eff { def op(x, k) = k(値) }` で偽物に差し替えてテストできる。
 - 依存は `flix.toml` で `mount` を付け、その名前で参照する（0.79.0）。`mount` を外すと、接頭辞なしの `use` でも参照できなくなる（E3138）ので、別名ではなく参照に必要なものとして扱う。
   例：`"github:Cj-bc/paranoid_time_flix" = { version = "0.4.0", mount = "paranoidTime" }` なら `use paranoidTime::ParanoidTime.Instant`。
+
+## IO を使うハンドラを手で確かめる・モジュールの名前（Flix 0.79.0、2026-11-17 に確認）
+
+- 本物のプロセスを使うハンドラは、`src/Main.flix` を一時的に書き換えて `java -jar flix.jar run` で動かして確かめた
+  （テストから本物のプロセスを起こしたくなかったため）。先に `cp` で退避し、終わったら戻して `git status` で差分がないことを確認する（コミットに混ぜない）。
+  標準の `Process` は `run { 自分の関数() } with Sys.Process.runWithIO` で処理できる。
+- 自分のモジュールを `FlixAgent.Agent.Shell.Process` のように標準ライブラリと同じ名前（`Process`）で終えても、
+  その中で `use Sys.Process` して `Process.exec` などを呼べた（衝突しない）。
