@@ -177,6 +177,6 @@ Align with established APIs when the domain is well-known (like Java's java.time
 
 ## 0.79.0 で確かめた小さな挙動（2026-11-18、flix-agent#26）
 
-- `check` / `test` は、依存がなくても毎回 `packages.lock`（`[lock] version = 1` だけ）と `lib/cache` を作る。`lib/` は .gitignore に入れることが多いが、`packages.lock` は依存のハッシュを記録するのでコミットする（flix-agent ではそう決めた）。
+- `check` / `test` は、依存がなくても毎回 `packages.lock`（`[lock] version = 1` だけ）と `lib/cache` を作る。`lib/` は .gitignore に入れることが多いが、`packages.lock` は依存のハッシュを記録するのでコミットする。
 - 使っていない `use` はエラーにも警告にもならない。型を別のモジュールに移した後は、残った不要な `use` を自分で grep して消す。
 - テストの共通の補助関数は、`test/TestSupport.flix` に `mod TestSupport { pub def … }` と置けば、ほかのテストモジュールから `use TestSupport.{json, user}` で使える（`@Test` がなくてもよい）。補助関数は `pub def` にしないと参照できない。
