@@ -1,6 +1,6 @@
 ---
 name: github-actions
-description: GitHub Actions で Secrets を使うワークフローを書くときの知見 — Action を SHA で固定する手順（git ls-remote と ^{}、公開日の確認）、Environment の Secrets は composite action に inputs で渡す（再利用可能なワークフローでは空だった）、ログのマスクから短い Secret の値が分かる、Secrets のジョブと書き込み権限のジョブを分ける、setup-gradle のキャッシュの既定、actionlint をクラウドで動かす、Android の署名を環境変数から作る、GitHub App の Web フローは PKCE でも client_secret が必須
+description: GitHub Actions で Secrets を使うワークフローを書くときの知見 — Action を SHA で固定する手順（git ls-remote と ^{}、公開日の確認）、Environment の Secrets は composite action に inputs で渡す（再利用可能なワークフローでは空だった）、ログのマスクから短い Secret の値が分かる、Secrets のジョブと書き込み権限のジョブを分ける、setup-gradle のキャッシュの既定、actionlint をクラウドで動かす、Android の署名を環境変数から作る、GitHub App の Web フローは PKCE でも client_secret が必須。ubuntu-latest は 2026-11 時点で Ubuntu 26.04 になり、coreutils が uutils のマルチコールバイナリ（`/bin/sleep` を別名でコピーすると動かない）。コンフリクト中の PR には pull_request の CI が走らない
 type: reference
 ---
 
@@ -64,3 +64,20 @@ PKCE（S256 のみ）に対応しているが、トークンの交換とリフ�
 - スラッグは秘密ではないので、Environments の Variables（`vars.X`）でワークフローから渡す。
 - スラッグは App の名前そのものではない。`.` などは `-` に置き換わる（`tmp-budget-book.debug` → `tmp-budget-book-debug`）。設定画面の「Public link」の値を使う。違うと `/apps/<slug>/installations/new` が 404 になる（private の App で未ログインのときも 404 になるはずなので紛らわしい）。
 - インストール済みで一度認可した後は、認可画面は同意を省いてすぐ戻る。ただし Callback が独自スキームだと、アカウント選択は毎回出る（ドキュメントの `prompt` パラメータの説明）。
+
+## ubuntu-latest は Ubuntu 26.04 で、coreutils が uutils（2026-11-24、flix-agent#16）
+2026-11 時点の `ubuntu-latest` は `ubuntu-26.04`（ジョブのログの「Runner Image」の `Image:` で分かる）。
+26.04 の coreutils は uutils で、`/usr/bin/sleep` などはひとつのマルチコールバイナリへのシンボリックリンク。
+起動されたときのファイル名（argv[0] の basename）を見て、どのコマンドとして動くかを決める。
+- テストで `/bin/sleep` を `running` という名前にコピーして実行したら（`cp` はシンボリックリンクをたどるので、中身はマルチコールバイナリ）、`function/utility not found` を出してすぐ終了し、
+  「実行中のファイルを上書きできる」テストが落ちた。手元（Ubuntu 24.04、GNU coreutils）では通っていた。
+- コピーするなら元と同じ名前（`sleep`）にする。GNU でも uutils でも動く。
+- 手元で再現するには `apt-get install -y rust-coreutils` で `/usr/bin/coreutils` を入れ、`cp /usr/bin/coreutils <dir>/running && <dir>/running 1`。
+  テスト全体を uutils で走らせるなら、使い捨ての環境で `/usr/bin/sleep` を `ln -sf /usr/bin/coreutils` に一時的に差し替え、終わったら戻す。
+
+## コンフリクト中の PR では pull_request の CI が走らない（2026-11-24、flix-agent#16）
+`on: pull_request` のワークフローは、PR がベースとマージできない間は実行されない（GitHub が merge ref を作れないため）。
+そのためコンフリクトしていた期間に足したテストは、一度も CI を通っていないことがある。
+flix-agent#16 では、最後の CI が 11/18、テストの追加が 11/22 で、コンフリクトを解消して初めて CI が走り、上の uutils の失敗が見つかった。
+コンフリクトを解消した後に CI が落ちたら、マージのせいと決めつけず、ブランチで最後に CI が走った日時（GitHub MCP の `actions_list` で `list_workflow_runs` をブランチで絞る）と、
+落ちたテストが足された日時（`git log -S <テスト名>`）を比べる。
